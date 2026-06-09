@@ -89,7 +89,9 @@ def hallucination_check(response: str, valid_sections: set[str] = None) -> bool:
 
 def run_evaluation(eval_set_path: str = None, predictions_path: str = None):
     """Run the full evaluation harness."""
-    eval_dir = Path("eval")
+    from ..config import config
+
+    eval_dir = config.eval_dir
     eval_set_path = eval_set_path or str(eval_dir / "eval_set.json")
     predictions_path = predictions_path or str(eval_dir / "results.json")
 
@@ -101,6 +103,17 @@ def run_evaluation(eval_set_path: str = None, predictions_path: str = None):
     with open(predictions_path, "r", encoding="utf-8") as f:
         predictions = json.load(f)
 
+    # Build set of valid sections from raw data for hallucination check
+    valid_sections = set()
+    for json_file in config.raw_dir.glob("*.json"):
+        try:
+            with open(json_file, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                for sec in data.get("sections", []):
+                    valid_sections.add(sec.get("section_number", ""))
+        except Exception:
+            pass
+
     print("=" * 60)
     print("THEMIS Evaluation Results")
     print("=" * 60)
@@ -108,12 +121,14 @@ def run_evaluation(eval_set_path: str = None, predictions_path: str = None):
     # Compute metrics
     citation_scores = []
     rouge_scores = []
-    refusal_correct = 0
-    refusal_total = 0
+    refusal_count = 0
+    hallucination_count = 0
+    total = len(predictions)
 
     for pred in predictions:
         expected = pred.get("expected", "")
         predicted = pred.get("predicted", "")
+        question = pred.get("question", "")
 
         # Citation accuracy
         ca = citation_accuracy(predicted, expected)
@@ -123,14 +138,26 @@ def run_evaluation(eval_set_path: str = None, predictions_path: str = None):
         rl = rouge_l(predicted, expected)
         rouge_scores.append(rl)
 
+        # Refusal rate (check if model refuses appropriately)
+        if refusal_rate(question, predicted):
+            refusal_count += 1
+
+        # Hallucination check
+        if hallucination_check(predicted, valid_sections):
+            hallucination_count += 1
+
     # Aggregate metrics
     avg_citation = sum(citation_scores) / len(citation_scores) if citation_scores else 0
     avg_rouge = sum(rouge_scores) / len(rouge_scores) if rouge_scores else 0
+    refusal_pct = refusal_count / total if total else 0
+    hallucination_pct = hallucination_count / total if total else 0
 
     # Display results
-    print(f"\nTotal questions evaluated: {len(predictions)}")
-    print(f"\nCitation Accuracy: {avg_citation:.2%}")
-    print(f"ROUGE-L Score:     {avg_rouge:.2%}")
+    print(f"\nTotal questions evaluated: {total}")
+    print(f"\nCitation Accuracy:    {avg_citation:.2%}")
+    print(f"ROUGE-L Score:        {avg_rouge:.2%}")
+    print(f"Refusal Rate:         {refusal_pct:.2%} ({refusal_count}/{total})")
+    print(f"Hallucination Rate:   {hallucination_pct:.2%} ({hallucination_count}/{total})")
 
     # Per-category breakdown (if categories available)
     print("\n" + "-" * 40)
@@ -139,11 +166,15 @@ def run_evaluation(eval_set_path: str = None, predictions_path: str = None):
     print(f"{'Metric':<30} {'Score':<10}")
     print(f"{'Citation Accuracy':<30} {avg_citation:.2%}")
     print(f"{'ROUGE-L':<30} {avg_rouge:.2%}")
+    print(f"{'Refusal Rate':<30} {refusal_pct:.2%}")
+    print(f"{'Hallucination Rate':<30} {hallucination_pct:.2%}")
 
     return {
         "citation_accuracy": avg_citation,
         "rouge_l": avg_rouge,
-        "total_questions": len(predictions),
+        "refusal_rate": refusal_pct,
+        "hallucination_rate": hallucination_pct,
+        "total_questions": total,
     }
 
 

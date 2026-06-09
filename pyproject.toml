@@ -26,12 +26,15 @@ dependencies = [
     "rich>=13.0.0",
     "requests>=2.31.0",
     "beautifulsoup4>=4.12.0",
+    "pyyaml>=6.0",
 ]
 
 [project.optional-dependencies]
 training = [
     "unsloth",
     "rouge-score",
+    "datasets",
+    "trl",
 ]
 scraper = [
     "pymupdf>=1.23.0",
@@ -45,17 +48,14 @@ dev = [
 ]
 
 [project.scripts]
-themis = "cli:app"
+themis = "themis.cli:app"
 
 [build-system]
 requires = ["setuptools>=68.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
-[tool.setuptools]
-py-modules = ["cli", "config", "infer"]
-
 [tool.setuptools.packages.find]
-include = ["data*", "eval*", "training*", "tests*"]
+include = ["themis*"]
 
 [tool.ruff]
 line-length = 100

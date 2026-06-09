@@ -95,9 +95,9 @@ def run(
     no_api: bool = typer.Option(False, "--no-api", help="Use template generation only"),
 ):
     """Show banner and run the full data pipeline."""
-    from data.scraper.indiacode import scrape_target_laws
-    from data.synthetic.generate import generate_training_data
-    from data.preprocess import preprocess_pipeline
+    from .data.scraper.indiacode import scrape_target_laws
+    from .data.synthetic.generate import generate_training_data
+    from .data.preprocess import preprocess_pipeline
 
     display_banner()
     display_info_panel()
@@ -136,7 +136,7 @@ def ask(
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Show detailed output"),
 ):
     """Ask a legal question and get a response."""
-    from infer import load_model, get_inference
+    from .infer import load_model, get_inference
 
     display_banner()
 
@@ -178,7 +178,7 @@ def ask(
 @app.command()
 def chat():
     """Start an interactive multi-turn legal Q&A session."""
-    from infer import load_model, get_inference
+    from .infer import load_model, get_inference
 
     display_banner()
     display_info_panel()
@@ -252,7 +252,7 @@ def scrape(
     delay: float = typer.Option(1.0, "--delay", "-d", help="Delay between requests (seconds)"),
 ):
     """Scrape legal data from India Code and Indian Kanoon."""
-    from data.scraper.indiacode import IndiaCodeScraper, scrape_target_laws
+    from .data.scraper.indiacode import IndiaCodeScraper, scrape_target_laws
 
     display_banner()
     console.print("[bold yellow]Data Scraper[/bold yellow]\n")
@@ -306,7 +306,7 @@ def generate(
     ),
 ):
     """Generate synthetic Q&A pairs from scraped data."""
-    from data.synthetic.generate import generate_training_data
+    from .data.synthetic.generate import generate_training_data
 
     display_banner()
     console.print("[bold yellow]Synthetic Data Generator[/bold yellow]\n")
@@ -329,7 +329,7 @@ def generate(
 @app.command()
 def preprocess():
     """Merge, clean, and deduplicate all datasets."""
-    from data.preprocess import preprocess_pipeline
+    from .data.preprocess import preprocess_pipeline
 
     display_banner()
     console.print("[bold yellow]Data Preprocessing[/bold yellow]\n")
@@ -349,11 +349,12 @@ def eval(
 ):
     """Run the evaluation harness."""
     import json
+    from .config import config
 
     display_banner()
     console.print("[bold yellow]Evaluation Mode[/bold yellow]\n")
 
-    eval_file = Path("eval/eval_set.json")
+    eval_file = config.eval_dir / "eval_set.json"
     if not eval_file.exists():
         console.print(f"[red]Eval set not found:[/red] {eval_file}")
         console.print("Run 'themis preprocess' to generate the eval set.")
@@ -365,7 +366,7 @@ def eval(
     console.print(f"Loaded {len(eval_set)} evaluation questions\n")
 
     try:
-        from infer import load_model, get_inference
+        from .infer import load_model, get_inference
         load_model()
     except Exception as e:
         console.print(f"[red]Error loading model:[/red] {e}")
@@ -391,7 +392,7 @@ def eval(
             console.print(f"  [red]Error:[/red] {e}\n")
 
     # Save results
-    output_file = Path("eval/results.json")
+    output_file = config.eval_dir / "results.json"
     with open(output_file, "w", encoding="utf-8") as f:
         json.dump(results, f, indent=2, ensure_ascii=False)
 

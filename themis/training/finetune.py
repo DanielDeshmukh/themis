@@ -10,15 +10,23 @@ Usage (in Kaggle notebook):
 import json
 from pathlib import Path
 
-import yaml
-
 
 def load_config(config_path: str = None) -> dict:
     """Load training config from YAML."""
+    import yaml
     if config_path is None:
         config_path = Path(__file__).parent / "config.yaml"
     with open(config_path, "r") as f:
         return yaml.safe_load(f)
+
+
+def format_instruction(sample):
+    """Format a single sample for SFT training."""
+    text = f"### Instruction:\n{sample['instruction']}\n\n"
+    if sample.get("input"):
+        text += f"### Input:\n{sample['input']}\n\n"
+    text += f"### Response:\n{sample['output']}"
+    return text
 
 
 def train():
@@ -27,7 +35,7 @@ def train():
         from unsloth import FastLanguageModel
         from trl import SFTTrainer
         from transformers import TrainingArguments
-        from datasets import load_dataset
+        from datasets import Dataset
     except ImportError:
         print("Error: Required packages not found.")
         print("Install with: pip install unsloth trl transformers datasets")
@@ -70,23 +78,19 @@ def train():
     print(f"\nLoading dataset: {dataset_path}")
 
     with open(dataset_path, "r", encoding="utf-8") as f:
-        dataset = json.load(f)
+        raw_data = json.load(f)
 
-    # Format dataset for SFT
-    def format_instruction(sample):
-        text = f"### Instruction:\n{sample['instruction']}\n\n"
-        if sample.get("input"):
-            text += f"### Input:\n{sample['input']}\n\n"
-        text += f"### Response:\n{sample['output']}"
-        return text
+    # Convert to HuggingFace Dataset
+    dataset = Dataset.from_list(raw_data)
+    print(f"Loaded {len(dataset)} training samples")
 
-    # Create trainer
+    # Create trainer with formatting_func
     print("Setting up trainer...")
     trainer = SFTTrainer(
         model=model,
         tokenizer=tokenizer,
         train_dataset=dataset,
-        dataset_text_field=None,  # We'll use a custom formatter
+        formatting_func=format_instruction,
         max_seq_length=training_config["max_seq_length"],
         args=TrainingArguments(
             per_device_train_batch_size=training_config["batch_size"],

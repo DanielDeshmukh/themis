@@ -9,17 +9,17 @@ class Config:
     """Project-wide configuration for THEMIS."""
 
     # Paths
-    project_root: Path = field(default_factory=lambda: Path(__file__).parent)
+    project_root: Path = field(default_factory=lambda: Path(__file__).parent.parent)
     data_dir: Path = field(default_factory=lambda: Path(__file__).parent / "data")
     raw_dir: Path = field(default_factory=lambda: Path(__file__).parent / "data" / "scraper" / "raw")
     synthetic_dir: Path = field(default_factory=lambda: Path(__file__).parent / "data" / "synthetic")
-    model_dir: Path = field(default_factory=lambda: Path(__file__).parent / "model")
+    model_dir: Path = field(default_factory=lambda: Path(__file__).parent.parent / "model")
     eval_dir: Path = field(default_factory=lambda: Path(__file__).parent / "eval")
 
     # Model
     base_model: str = "mistralai/Mistral-7B-Instruct-v0.3"
     lora_adapter: str = "danieldeshmukh/themis-mistral-7b-lora"
-    local_model_path: Path = field(default_factory=lambda: Path(__file__).parent / "model" / "themis-lora")
+    local_model_path: Path = field(default_factory=lambda: Path(__file__).parent.parent / "model" / "themis-lora")
 
     # Generation
     temperature: float = 0.3
