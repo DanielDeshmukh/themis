@@ -6,7 +6,7 @@ readme = "README.md"
 license = {text = "MIT"}
 requires-python = ">=3.11"
 authors = [
-    {name = "Daniel Deshmukh"},
+    {name = "Daniel Deshmukh", email = "deshmukhdaniel2005@gmail.com"},
 ]
 keywords = ["indian-law", "legal-ai", "bns", "ipc", "bnss", "fine-tuning", "lora"]
 classifiers = [
