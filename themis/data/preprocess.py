@@ -8,7 +8,7 @@ import json
 import re
 from pathlib import Path
 
-from config import config
+from ..config import config
 
 
 def clean_text(text: str) -> str:

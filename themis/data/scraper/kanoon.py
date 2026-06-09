@@ -14,7 +14,7 @@ from urllib.parse import urljoin
 import requests
 from bs4 import BeautifulSoup
 
-from config import config
+from ...config import config
 
 
 @dataclass
@@ -51,13 +51,13 @@ class KanoonScraper:
             "Accept": "text/html,application/xhtml+xml",
         })
 
-    def _get(self, url: str, retries: int = None) -> requests.Response:
+    def _get(self, url: str, retries: int = None, params: dict = None) -> requests.Response:
         """GET request with retry and rate limiting."""
         retries = retries or config.max_retries
         for attempt in range(retries):
             try:
                 time.sleep(self.delay)
-                resp = self.session.get(url, timeout=30)
+                resp = self.session.get(url, params=params, timeout=30)
                 resp.raise_for_status()
                 return resp
             except requests.RequestException as e:

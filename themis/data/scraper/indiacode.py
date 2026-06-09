@@ -14,7 +14,7 @@ from urllib.parse import urljoin
 import requests
 from bs4 import BeautifulSoup
 
-from config import config
+from ...config import config
 
 
 @dataclass
@@ -130,6 +130,11 @@ class IndiaCodeScraper:
             match = re.search(r"sectionno=(\d+)", href)
             if match:
                 section_no = match.group(1)
+                # Extract act_id and sectionId from URL
+                act_id_match = re.search(r"actid=([^&]+)", href)
+                section_id_match = re.search(r"sectionId=(\d+)", href)
+                act_id = act_id_match.group(1) if act_id_match else ""
+                section_id = section_id_match.group(1) if section_id_match else ""
                 # Clean section title
                 title_match = re.search(r"Section \d+\.\s*(.*)", text)
                 title = title_match.group(1).strip() if title_match else text
@@ -137,6 +142,8 @@ class IndiaCodeScraper:
                     "section_number": section_no,
                     "title": title,
                     "url": urljoin(self.BASE_URL, href),
+                    "act_id": act_id,
+                    "section_id": section_id,
                 })
         return sections
 
@@ -157,24 +164,31 @@ class IndiaCodeScraper:
                         chapters[heading] = chapter_name
         return chapters
 
-    def fetch_section_text(self, section_url: str) -> str:
-        """Fetch the full text of a single section."""
+    def fetch_section_text(self, section_url: str, act_id: str = "", section_id: str = "") -> str:
+        """Fetch the full text of a single section via AJAX endpoint."""
         try:
-            resp = self._get(section_url)
-            soup = BeautifulSoup(resp.text, "html.parser")
-            # The section text is in the page content
-            # Look for the main content area
-            content = soup.find("div", class_="panel-body")
-            if content:
-                # Get all paragraph text
-                paragraphs = content.find_all("p")
-                text = "\n\n".join(p.get_text(strip=True) for p in paragraphs if p.get_text(strip=True))
-                if text:
-                    return text
-            # Fallback: get all text from main content
-            main = soup.find("div", id="col8") or soup.find("main")
-            if main:
-                return main.get_text(separator="\n", strip=True)
+            # Use the AJAX endpoint that loads section content
+            ajax_url = f"{self.BASE_URL}/SectionPageContent"
+            params = {"actid": act_id, "sectionID": section_id}
+            resp = self._get(ajax_url, params=params)
+            
+            # Response is JSON with 'content' and 'footnote' fields
+            try:
+                data = resp.json()
+                content = data.get("content", "")
+                footnote = data.get("footnote", "")
+                full_text = content
+                if footnote:
+                    full_text += "\n\n" + footnote
+                # Clean HTML tags
+                if full_text:
+                    soup = BeautifulSoup(full_text, "html.parser")
+                    return soup.get_text(separator="\n", strip=True)
+            except Exception:
+                # Fallback: treat as HTML
+                soup = BeautifulSoup(resp.text, "html.parser")
+                return soup.get_text(separator="\n", strip=True)
+            
         except Exception as e:
             print(f"  Warning: Failed to fetch section text: {e}")
         return ""
@@ -215,7 +229,11 @@ class IndiaCodeScraper:
         # Fetch each section
         for i, sec_info in enumerate(section_links):
             print(f"  Fetching section {sec_info['section_number']}/{len(section_links)}...")
-            text = self.fetch_section_text(sec_info["url"])
+            text = self.fetch_section_text(
+                sec_info["url"],
+                act_id=sec_info.get("act_id", ""),
+                section_id=sec_info.get("section_id", ""),
+            )
 
             section = Section(
                 section_number=sec_info["section_number"],

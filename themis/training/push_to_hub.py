@@ -3,13 +3,11 @@
 import sys
 from pathlib import Path
 
-from huggingface_hub import HfApi
-
 
 def push_to_hub(adapter_dir: str = None, repo_name: str = None):
     """Upload LoRA adapter to HuggingFace Hub."""
     try:
-        from huggingface_hub import login
+        from huggingface_hub import HfApi, login
     except ImportError:
         print("Error: huggingface_hub not installed.")
         print("Install with: pip install huggingface_hub")

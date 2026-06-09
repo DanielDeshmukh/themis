@@ -17,7 +17,7 @@ from pathlib import Path
 
 import requests
 
-from config import config
+from ...config import config
 
 
 @dataclass

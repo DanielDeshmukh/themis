@@ -8,13 +8,10 @@ import json
 import sys
 from pathlib import Path
 
-# Add parent directory to path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
 
 def run_eval(verbose: bool = False):
     """Run the evaluation harness."""
-    from eval.metrics import citation_accuracy, rouge_l, run_evaluation
+    from .metrics import run_evaluation
 
     eval_dir = Path(__file__).parent
     eval_set_path = eval_dir / "eval_set.json"
@@ -32,12 +29,12 @@ def run_eval(verbose: bool = False):
     print(f"Loaded {len(eval_set)} evaluation questions")
 
     # Try to load model and generate predictions
+    results = []
     try:
-        from infer import load_model, get_inference
+        from ..infer import load_model, get_inference
         load_model()
         inference = get_inference()
 
-        results = []
         for i, item in enumerate(eval_set):
             question = item.get("instruction", "")
             print(f"Q{i+1}/{len(eval_set)}: {question[:60]}...")
