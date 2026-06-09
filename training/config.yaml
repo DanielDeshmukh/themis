@@ -1,0 +1,34 @@
+# LoRA fine-tuning configuration for THEMIS
+
+base_model: mistralai/Mistral-7B-Instruct-v0.3
+method: lora
+
+lora:
+  r: 16                          # LoRA rank
+  lora_alpha: 32                 # Scaling factor
+  target_modules:                # Attention layers only
+    - q_proj
+    - k_proj
+    - v_proj
+    - o_proj
+  lora_dropout: 0.05
+  bias: none
+  task_type: CAUSAL_LM
+
+training:
+  epochs: 3
+  batch_size: 2
+  gradient_accumulation_steps: 4
+  learning_rate: 2e-4
+  warmup_ratio: 0.03
+  lr_scheduler: cosine
+  max_seq_length: 2048
+  fp16: true                     # T4 compatible
+
+unsloth:
+  use_gradient_checkpointing: true
+  random_state: 42
+
+output:
+  adapter_dir: ./model/themis-lora
+  hub_repo: danieldeshmukh/themis-mistral-7b-lora

@@ -1,0 +1,54 @@
+# THEMIS model weights (gitignored)
+model/*.bin
+model/*.safetensors
+model/*.pt
+model/*.pth
+model/adapter_model*
+model/adapter_config*
+model/tokenizer*
+model/special_tokens*
+model/README*
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+
+# Data (large files)
+data/scraper/raw/*.json
+data/synthetic/*.json
+data/dataset.json
+
+# Training outputs
+outputs/
+wandb/
+*.log
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Evaluation results
+eval/results.json
