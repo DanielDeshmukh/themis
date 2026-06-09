@@ -420,6 +420,8 @@ def info():
     table.add_row("Domain", "Indian Law (BNS, BNSS, IPC, Consumer)")
     table.add_row("Dataset Size", "~2,800 instruction pairs")
     table.add_row("CLI Framework", "Typer + Rich")
+    table.add_row("Author", "Daniel Deshmukh")
+    table.add_row("Contact", "Email: deshmukhdaniel2005@gmail.com")
     table.add_row("License", "MIT")
 
     console.print(table)
