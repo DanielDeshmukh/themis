@@ -25,11 +25,11 @@ THEMIS is an offline CLI tool. The attack surface is minimal compared to web-dep
 
 ### API Key Management
 
-**Risk:** Claude API key exposure during synthetic generation.
+**Risk:** API key exposure during synthetic generation.
 
 | Control | Implementation |
 |---------|----------------|
-| Environment variables | Store `CLAUDE_API_KEY` in `.env`, never commit |
+| Environment variables | Store `GROQ_API_KEY` in `.env`, never commit |
 | `.gitignore` | Ensure `.env` is in `.gitignore` |
 | No hardcoded keys | Scan codebase for leaked credentials |
 | Least privilege | Use API key with minimal necessary permissions |
@@ -53,7 +53,7 @@ THEMIS is an offline CLI tool. The attack surface is minimal compared to web-dep
 
 | Control | Implementation |
 |---------|----------------|
-| Claude prompt engineering | Instruct Claude to cite only official sections |
+| API prompt engineering | Instruct model to cite only official sections |
 | Output validation | Verify cited section numbers exist in parsed data |
 | Human review | Review sample of generated Q&A pairs |
 | Disclaimer injection | Every training pair includes disclaimer language |

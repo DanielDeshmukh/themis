@@ -22,7 +22,8 @@ THEMIS is built on a minimal, cost-effective stack optimized for free compute (K
 | **CLI Framework** | Typer | latest | Command-line interface | Fast, type-safe, auto-generated help |
 | **Terminal UI** | Rich | latest | Formatted output | Beautiful panels, tables, progress bars |
 | **Scraping** | requests + BeautifulSoup | — | Web scraping | Simple, reliable for static sites |
-| **Synthetic Data** | Claude API | — | Q&A pair generation | High-quality legal text generation |
+| **Synthetic Data** | Groq API (Mixtral-8x7b) | — | Q&A pair generation | Free tier, fast inference, open models |
+| **Synthetic Fallback** | Template-based | — | Q&A generation without API | Zero cost, deterministic |
 | **Evaluation** | custom + rouge-score | — | Model evaluation | Citation accuracy + ROUGE-L |
 | **Packaging** | pyproject.toml | — | Package distribution | Modern Python packaging standard |
 

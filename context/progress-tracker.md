@@ -28,7 +28,7 @@
 | 1.1 | Set up data/ directory structure | — | Not Started | |
 | 1.2 | Build India Code scraper (indiacode.py) | — | Not Started | Parse BNS, BNSS, BSA, CPA, RTI sections |
 | 1.3 | Build Indian Kanoon scraper (kanoon.py) | — | Not Started | 500 judgment summaries |
-| 1.4 | Set up Claude synthetic generation (generate.py) | — | Not Started | ~1500 Q&A pairs |
+| 1.4 | Set up Groq/template synthetic generation (generate.py) | — | Not Started | ~1500 Q&A pairs |
 | 1.5 | Build preprocessing pipeline (preprocess.py) | — | Not Started | Clean, dedup, format to Alpaca JSON |
 | 1.6 | Create final dataset.json | — | Not Started | ~2800 instruction pairs |
 | 1.7 | Data validation and quality checks | — | Not Started | Verify citations are correct |
@@ -92,7 +92,7 @@
 | 2 | No LoRA adapter weights | Cannot run inference | Open | Need Phase 2 complete |
 | 3 | India Code scraping unknowns | Data quality risk | Open | Test scraper early |
 | 4 | Kaggle GPU quota limits | Training speed | Open | Plan for quota resets |
-| 5 | Claude API costs | Synthetic generation cost | Open | Budget for ~1500 pairs |
+| 5 | API rate limits | Synthetic generation speed | Open | Use template fallback if needed |
 
 ---
 
@@ -109,4 +109,4 @@
 
 1. **Immediate:** Build data scraper for India Code (task 1.2)
 2. **This Week:** Set up data/ directory and preprocessing pipeline
-3. **Next Week:** Start Claude synthetic generation for Q&A pairs
+3. **Next Week:** Start Groq/template synthetic generation for Q&A pairs

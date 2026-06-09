@@ -1,4 +1,7 @@
-"""Synthetic Q&A pair generation using Claude API.
+"""Synthetic Q&A pair generation using free APIs.
+
+Primary: Groq API (free, fast, Mixtral/Llama3)
+Fallback: Template-based generation (no API needed)
 
 Generates instruction-tuning pairs from parsed Bare Act sections.
 Each pair follows the Alpaca format: instruction, input, output.
@@ -6,6 +9,7 @@ Each pair follows the Alpaca format: instruction, input, output.
 
 import json
 import os
+import random
 import re
 import time
 from dataclasses import dataclass
@@ -27,7 +31,7 @@ class QAPair:
     source_act: str = ""
 
 
-# Prompt template for Claude to generate Q&A pairs
+# Prompt template for LLM to generate Q&A pairs
 QA_PROMPT_TEMPLATE = """You are generating training data for a legal AI model called THEMIS that helps Indian citizens understand law.
 
 Given this legal section from {act_name}:
@@ -60,20 +64,123 @@ Return ONLY a JSON object in this exact format (no markdown, no code blocks):
 }}"""
 
 
-class SyntheticGenerator:
-    """Generate synthetic Q&A pairs using Claude API."""
+# =============================================================================
+# Template-based generator (no API needed)
+# =============================================================================
+
+# Question templates organized by section title keywords
+QUESTION_TEMPLATES = {
+    "punishment": [
+        "What is the punishment for {title_lower}?",
+        "How is {title_lower} punished under {act_name}?",
+        "What penalty does the law prescribe for {title_lower}?",
+    ],
+    "definition": [
+        "What does {act_name} mean by '{title}'?",
+        "How is '{title}' defined in {act_name}?",
+        "What is the legal definition of {title_lower}?",
+    ],
+    "right": [
+        "What are my rights regarding {title_lower}?",
+        "Can I {title_lower} under {act_name}?",
+        "How do I exercise my right to {title_lower}?",
+    ],
+    "offence": [
+        "Is {title_lower} a crime under {act_name}?",
+        "What happens if someone commits {title_lower}?",
+        "What are the consequences of {title_lower}?",
+    ],
+    "procedure": [
+        "What is the procedure for {title_lower}?",
+        "How do I file for {title_lower}?",
+        "What steps should I follow for {title_lower}?",
+    ],
+    "default": [
+        "What does Section {section_number} of {act_name} say?",
+        "Explain Section {section_number} of {act_name} in simple terms.",
+        "What should I know about {title_lower} under {act_name}?",
+    ],
+}
+
+
+def categorize_section(title: str, text: str) -> str:
+    """Categorize a section based on its title and content."""
+    combined = (title + " " + text).lower()
+
+    if any(kw in combined for kw in ["punish", "imprisonment", "fine", "death", "rigorous"]):
+        return "punishment"
+    elif any(kw in combined for kw in ["defin", "meaning", "interpretation"]):
+        return "definition"
+    elif any(kw in combined for kw in ["right", "entitled", "may claim", "shall be entitled"]):
+        return "right"
+    elif any(kw in combined for kw in ["offence", "crime", "stolen", "fraud", "cheating", "murder", "theft"]):
+        return "offence"
+    elif any(kw in combined for kw in ["procedure", "file", "complaint", "application", "form"]):
+        return "procedure"
+    return "default"
+
+
+def generate_question_template(section: dict) -> QAPair:
+    """Generate a Q&A pair using templates (no API needed)."""
+    section_no = section.get("section_number", "")
+    title = section.get("title", "this provision")
+    text = section.get("text", "")
+    act_name = section.get("act_name", "Indian law")
+
+    category = categorize_section(title, text)
+    templates = QUESTION_TEMPLATES.get(category, QUESTION_TEMPLATES["default"])
+    template = random.choice(templates)
+
+    title_lower = title.lower().rstrip(".")
+    instruction = template.format(
+        title=title,
+        title_lower=title_lower,
+        section_number=section_no,
+        act_name=act_name,
+    )
+
+    # Build answer from section text
+    clean_text = re.sub(r"\s+", " ", text).strip()
+    if len(clean_text) > 500:
+        clean_text = clean_text[:500] + "..."
+
+    output = (
+        f"Under Section {section_no} of the {act_name} ({title}):\n\n"
+        f"{clean_text}\n\n"
+        f"This section falls under the {act_name} and provides guidance on {title_lower}.\n\n"
+        f"DISCLAIMER: This is legal orientation, not legal advice. "
+        f"Consult a qualified advocate for your specific situation."
+    )
+
+    return QAPair(
+        instruction=instruction,
+        input="",
+        output=output,
+        source_section=section_no,
+        source_act=act_name,
+    )
+
+
+# =============================================================================
+# Groq API generator (free, fast)
+# =============================================================================
+
+class GroqGenerator:
+    """Generate synthetic Q&A pairs using Groq API (free tier)."""
+
+    BASE_URL = "https://api.groq.com/openai/v1/chat/completions"
+    MODEL = "mixtral-8x7b-32768"  # Free on Groq
 
     def __init__(self, api_key: str = None):
-        self.api_key = api_key or os.environ.get("ANTHROPIC_API_KEY")
+        self.api_key = api_key or os.environ.get("GROQ_API_KEY")
         if not self.api_key:
             raise ValueError(
-                "Claude API key required. Set ANTHROPIC_API_KEY environment variable."
+                "Groq API key required. Get free key at https://console.groq.com\n"
+                "Set GROQ_API_KEY environment variable."
             )
-        self.base_url = "https://api.anthropic.com/v1/messages"
         self.headers = {
-            "x-api-key": self.api_key,
-            "anthropic-version": "2023-06-01",
-            "content-type": "application/json",
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json",
         }
 
     def generate_qa_pair(self, section: dict) -> QAPair | None:
@@ -82,41 +189,38 @@ class SyntheticGenerator:
             act_name=section.get("act_name", "Indian law"),
             section_number=section.get("section_number", ""),
             section_title=section.get("title", ""),
-            section_text=section.get("text", "")[:2000],  # Limit text length
+            section_text=section.get("text", "")[:2000],
         )
 
         payload = {
-            "model": "claude-3-haiku-20240307",
-            "max_tokens": 1024,
+            "model": self.MODEL,
             "messages": [{"role": "user", "content": prompt}],
+            "temperature": 0.7,
+            "max_tokens": 1024,
         }
 
         try:
             resp = requests.post(
-                self.base_url, headers=self.headers, json=payload, timeout=60
+                self.BASE_URL, headers=self.headers, json=payload, timeout=60
             )
             resp.raise_for_status()
             data = resp.json()
 
-            # Extract response text
-            content = data.get("content", [{}])
-            if content:
-                text = content[0].get("text", "")
-                # Parse JSON from response
-                # Remove markdown code blocks if present
-                text = re.sub(r"```json\s*", "", text)
-                text = re.sub(r"```\s*$", "", text)
-                qa_data = json.loads(text.strip())
+            text = data["choices"][0]["message"]["content"]
+            # Parse JSON from response
+            text = re.sub(r"```json\s*", "", text)
+            text = re.sub(r"```\s*$", "", text)
+            qa_data = json.loads(text.strip())
 
-                return QAPair(
-                    instruction=qa_data.get("instruction", ""),
-                    input=qa_data.get("input", ""),
-                    output=qa_data.get("output", ""),
-                    source_section=section.get("section_number", ""),
-                    source_act=section.get("act_name", ""),
-                )
+            return QAPair(
+                instruction=qa_data.get("instruction", ""),
+                input=qa_data.get("input", ""),
+                output=qa_data.get("output", ""),
+                source_section=section.get("section_number", ""),
+                source_act=section.get("act_name", ""),
+            )
         except Exception as e:
-            print(f"  Warning: Failed to generate Q&A for section {section.get('section_number')}: {e}")
+            print(f"  Warning: Groq generation failed for section {section.get('section_number')}: {e}")
         return None
 
     def generate_from_sections(self, sections: list[dict], max_pairs: int = None) -> list[QAPair]:
@@ -134,11 +238,15 @@ class SyntheticGenerator:
                 pairs.append(qa_pair)
                 print(f"    Generated: {qa_pair.instruction[:60]}...")
 
-            # Rate limiting
-            time.sleep(0.5)
+            # Rate limiting (Groq is fast, but be polite)
+            time.sleep(0.3)
 
         return pairs
 
+
+# =============================================================================
+# Main generation pipeline
+# =============================================================================
 
 def load_sections_from_raw(raw_dir: Path) -> list[dict]:
     """Load all sections from raw scraped data."""
@@ -156,8 +264,14 @@ def load_sections_from_raw(raw_dir: Path) -> list[dict]:
     return sections
 
 
-def generate_training_data(raw_dir: Path = None, output_dir: Path = None):
-    """Generate all synthetic Q&A pairs from scraped data."""
+def generate_training_data(raw_dir: Path = None, output_dir: Path = None, use_api: bool = True):
+    """Generate all synthetic Q&A pairs from scraped data.
+
+    Args:
+        raw_dir: Directory with scraped JSON files
+        output_dir: Directory to save generated Q&A pairs
+        use_api: If True, try Groq API first; if False or fails, use templates
+    """
     raw_dir = raw_dir or config.raw_dir
     output_dir = output_dir or config.synthetic_dir
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -170,17 +284,34 @@ def generate_training_data(raw_dir: Path = None, output_dir: Path = None):
         print("No sections found. Run indiacode.py scraper first.")
         return
 
-    # Initialize generator
-    try:
-        generator = SyntheticGenerator()
-    except ValueError as e:
-        print(f"Error: {e}")
-        print("Set ANTHROPIC_API_KEY environment variable to generate synthetic data.")
-        return
+    pairs = []
 
-    # Generate Q&A pairs
-    pairs = generator.generate_from_sections(sections, max_pairs=1500)
-    print(f"\nGenerated {len(pairs)} Q&A pairs")
+    # Try Groq API first
+    if use_api:
+        try:
+            generator = GroqGenerator()
+            print("\nUsing Groq API (free tier) for generation...")
+            pairs = generator.generate_from_sections(sections, max_pairs=1500)
+            print(f"Generated {len(pairs)} pairs via Groq API")
+        except ValueError as e:
+            print(f"\n{e}")
+            print("Falling back to template-based generation...")
+        except Exception as e:
+            print(f"\nGroq API error: {e}")
+            print("Falling back to template-based generation...")
+
+    # Fallback to templates
+    if not pairs:
+        print("\nUsing template-based generation (no API needed)...")
+        random.seed(42)
+        for i, section in enumerate(sections):
+            if not section.get("text"):
+                continue
+            qa_pair = generate_question_template(section)
+            pairs.append(qa_pair)
+            if (i + 1) % 100 == 0:
+                print(f"  Generated {i + 1}/{len(sections)} pairs...")
+        print(f"Generated {len(pairs)} pairs via templates")
 
     # Save output
     output_data = [
@@ -198,9 +329,11 @@ def generate_training_data(raw_dir: Path = None, output_dir: Path = None):
     with open(output_file, "w", encoding="utf-8") as f:
         json.dump(output_data, f, indent=2, ensure_ascii=False)
 
-    print(f"Saved to {output_file}")
+    print(f"\nSaved to {output_file}")
     return pairs
 
 
 if __name__ == "__main__":
-    generate_training_data()
+    import sys
+    use_api = "--no-api" not in sys.argv
+    generate_training_data(use_api=use_api)

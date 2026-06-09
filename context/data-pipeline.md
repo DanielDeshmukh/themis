@@ -2,7 +2,7 @@
 
 ## Overview
 
-THEMIS requires ~2,800 instruction-tuning pairs in Alpaca format. The data comes from three sources: India Code (Bare Acts), Indian Kanoon (judgment summaries), and Claude-generated synthetic Q&A pairs.
+THEMIS requires ~2,800 instruction-tuning pairs in Alpaca format. The data comes from three sources: India Code (Bare Acts), Indian Kanoon (judgment summaries), and synthetic Q&A pairs generated via Groq API (free) or template-based fallback.
 
 ---
 
@@ -37,14 +37,17 @@ THEMIS requires ~2,800 instruction-tuning pairs in Alpaca format. The data comes
 **Volume:** ~500 judgments
 **Format:** Case summaries with holdings and relevant sections cited
 
-### 3. Claude-Generated Synthetic Q&A
+### 3. Synthetic Q&A (Groq API / Template Fallback)
 
 **Type:** Instruction-tuning pairs
 **Content:** Q&A pairs generated from parsed Bare Act sections
-**Generation Method:** Claude API with structured prompts
+**Generation Methods:**
+1. **Groq API** (primary) — Free tier, Mixtral-8x7b, fast inference
+2. **Template-based** (fallback) — No API needed, deterministic generation
 
 **Volume:** ~1,500 pairs
 **Format:** Alpaca instruction format
+**Cost:** $0 (Groq free tier or template fallback)
 
 ---
 
@@ -54,8 +57,8 @@ THEMIS requires ~2,800 instruction-tuning pairs in Alpaca format. The data comes
 ┌─────────────────────────────────────────────────────────┐
 │                    RAW SOURCES                           │
 │  ┌──────────┐  ┌──────────┐  ┌──────────────┐          │
-│  │India Code│  │Indian    │  │Claude API    │          │
-│  │(Bare Acts)│  │Kanoon    │  │(Synthetic)   │          │
+│  │India Code│  │Indian    │  │Groq API /    │          │
+│  │(Bare Acts)│  │Kanoon    │  │Templates     │          │
 │  └────┬─────┘  └────┬─────┘  └──────┬───────┘          │
 └───────┼──────────────┼───────────────┼──────────────────┘
         │              │               │
@@ -151,45 +154,33 @@ THEMIS requires ~2,800 instruction-tuning pairs in Alpaca format. The data comes
 
 **Purpose:** Generate Q&A pairs from parsed Bare Act sections
 
-**Method:**
-1. Load parsed sections from `india_code_sections.json`
-2. For each section, construct a Claude prompt
-3. Generate question + answer pair
+**Methods (in order of preference):**
+
+1. **Groq API** (primary) — Free tier, Mixtral-8x7b
+2. **Template-based** (fallback) — No API needed
+
+**Groq API Method:**
+1. Load parsed sections from scraped JSON files
+2. For each section, call Groq API with structured prompt
+3. Parse JSON response to extract Q&A pair
 4. Include citation in answer
 5. Store in Alpaca format
 
-**Claude Prompt Template:**
-```
-You are generating training data for a legal AI model.
-
-Given this legal section:
-Section {number} of {law}: {text}
-
-Generate a realistic citizen question that this section answers.
-Then provide a clear, plain-language answer that:
-1. Cites the specific section number
-2. Explains the legal position in simple terms
-3. Mentions any related sections
-4. Includes a disclaimer that this is not legal advice
-
-Return as JSON:
-{
-  "instruction": "<the question>",
-  "input": "",
-  "output": "<the answer with citations>"
-}
-```
+**Template Fallback Method:**
+1. Categorize section by title keywords (punishment, definition, right, offence, procedure)
+2. Select appropriate question template
+3. Generate answer from section text with proper citation
+4. No API key required
 
 **Rate Limiting:**
-- Max 10 requests per minute to Claude API
-- Retry with exponential backoff on 429 errors
-- Log all API calls for cost tracking
+- Groq: 30 requests/minute (free tier)
+- Templates: No rate limiting
 
 **Quality Controls:**
 - Verify generated section numbers exist in source data
-- Check answer length (minimum 100 words)
+- Check answer length (minimum 50 words)
 - Ensure disclaimer is present
-- Sample manual review of 10% of outputs
+- Deduplicate by instruction similarity
 
 ---
 
@@ -250,7 +241,7 @@ Return as JSON:
 |--------|-------|------------|
 | India Code (parsed sections) | ~800 | 28% |
 | Indian Kanoon (judgment Q&A) | ~500 | 18% |
-| Synthetic (Claude-generated) | ~1,500 | 54% |
+| Synthetic (Groq/template) | ~1,500 | 54% |
 | **Total** | **~2,800** | **100%** |
 
 ---
@@ -266,7 +257,7 @@ data/
 │       ├── india_code_sections.json   # Raw scraped sections
 │       └── kanoon_judgments.json      # Raw scraped judgments
 ├── synthetic/
-│   ├── generate.py            # Claude Q&A generator
+│   ├── generate.py            # Groq/template Q&A generator
 │   ├── prompts.py             # Prompt templates
 │   └── synthetic_qa.json      # Generated Q&A pairs
 ├── preprocess.py              # Cleaning and merging
@@ -289,20 +280,22 @@ data/
 
 ## Cost Estimates
 
-### Claude API (Synthetic Generation)
-- ~1,500 Q&A pairs
-- ~500 tokens per request (prompt + completion)
-- Total: ~750K tokens
-- Cost: ~$3-5 at current Claude pricing
+### Synthetic Generation
+- **Groq API (primary):** $0 — Free tier (30 req/min, 14K tokens/day)
+- **Template fallback:** $0 — No API needed
+- Total: ~1,500 Q&A pairs at zero cost
 
 ### Scraping
-- Free (public data)
+- Free (public data from India Code + Indian Kanoon)
 - Time: ~2-4 hours total
 
 ### Storage
 - Raw data: ~50MB
 - Final dataset: ~10MB
 - Minimal cost
+
+### Total Project Cost: $0
+All components use free tiers or open-source tools.
 
 ---
 

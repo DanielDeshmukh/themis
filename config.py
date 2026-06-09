@@ -59,6 +59,11 @@ class Config:
     request_delay: float = 1.0  # seconds between requests
     max_retries: int = 3
 
+    # Synthetic generation (Groq free tier)
+    groq_api_url: str = "https://api.groq.com/openai/v1/chat/completions"
+    groq_model: str = "mixtral-8x7b-32768"  # Free on Groq
+    use_template_fallback: bool = True  # Use templates if API unavailable
+
     # System prompt
     system_prompt: str = (
         "You are THEMIS, a legal intelligence engine for Indian law. "

@@ -87,7 +87,7 @@ themis/
 │   │   ├── kanoon.py       # Indian Kanoon judgment scraper
 │   │   └── indiacode.py    # India Code Bare Acts parser
 │   ├── synthetic/
-│   │   └── generate.py     # Claude-assisted Q&A pair generation
+│   │   └── generate.py     # Groq/template Q&A pair generation
 │   ├── preprocess.py       # Cleaning, deduplication, formatting
 │   └── dataset.json        # Final Alpaca-format training dataset
 ├── training/
@@ -111,7 +111,7 @@ themis/
 | Training Platform | Kaggle (free T4 GPU) | Zero cost fine-tuning |
 | Dataset Format | Alpaca instruction tuning | Standard SFT format |
 | Data Sources | Indian Kanoon + India Code + Synthetic | Scraping + generation pipeline |
-| Synthetic Generation | Claude API | Q&A pair generation from Bare Act sections |
+| Synthetic Generation | Groq API (free) or Templates | Q&A pair generation from Bare Act sections |
 | CLI Framework | Typer + Rich | Beautiful terminal interface |
 | Inference | HuggingFace Transformers + PEFT | Load LoRA adapter on base model |
 | Evaluation | Custom harness + ROUGE-L | Citation accuracy + factual consistency |
@@ -196,7 +196,7 @@ pip install themis-law
 |--------|------|--------|
 | India Code (indiacode.nic.in) | BNS, BNSS, BSA, Consumer Protection Act, RTI Act — full text | ~800 sections parsed |
 | Indian Kanoon (indiankanoon.org) | Selected judgment summaries across criminal/civil/consumer domains | ~500 judgments |
-| Synthetic (Claude-generated) | Q&A pairs generated from parsed Bare Act sections | ~1,500 pairs |
+| Synthetic (Groq/template) | Q&A pairs generated from parsed Bare Act sections | ~1,500 pairs |
 | **Total** | | **~2,800 instruction pairs** |
 
 ### Format

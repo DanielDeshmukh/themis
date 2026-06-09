@@ -151,7 +151,7 @@ Raw Sources
     │
     ├─── India Code (Bare Acts) ──┐
     ├─── Indian Kanoon (Judgments)┤
-    └─── Claude API (Synthetic) ──┘
+    └─── Groq API / Templates ─┘
                                   │
                                   ▼
                          Data Preprocessing
@@ -193,7 +193,7 @@ themis/
 │   │   ├── kanoon.py       # Indian Kanoon judgment scraper
 │   │   └── indiacode.py    # India Code Bare Acts parser
 │   ├── synthetic/
-│   │   └── generate.py     # Claude-assisted Q&A pair generation
+│   │   └── generate.py     # Groq/template Q&A pair generation
 │   ├── preprocess.py       # Cleaning, deduplication, formatting
 │   └── dataset.json        # Final Alpaca-format training dataset
 ├── training/

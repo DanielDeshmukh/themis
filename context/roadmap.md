@@ -14,7 +14,7 @@ Make statutory law accessible to anyone with a terminal. Not as a replacement fo
 
 | Phase | Tasks | Status |
 |-------|-------|--------|
-| **Phase 1: Data Pipeline** | Scrape India Code Bare Acts, scrape Indian Kanoon judgments, generate synthetic Q&A pairs via Claude, preprocess and format to Alpaca JSON | Pending |
+| **Phase 1: Data Pipeline** | Scrape India Code Bare Acts, scrape Indian Kanoon judgments, generate synthetic Q&A pairs via Groq API (free) or template fallback, preprocess and format to Alpaca JSON | Pending |
 | **Phase 2: Training** | Set up Unsloth training notebook for Kaggle, configure LoRA hyperparameters, run fine-tuning on T4 GPU, export LoRA adapter to HuggingFace Hub | Pending |
 | **Phase 3: Inference** | Implement model loading with PEFT, build system prompt with legal domain instructions, build Rich CLI interface, implement ask/chat commands | Pending |
 | **Phase 4: Evaluation** | Create 50-question held-out eval set, implement citation accuracy metric, implement ROUGE-L and refusal rate metrics, run eval and document results | Pending |
@@ -31,7 +31,7 @@ Make statutory law accessible to anyone with a terminal. Not as a replacement fo
 | Task | Description |
 |------|-------------|
 | Curate landmark judgments | Select 50-100 landmark SC judgments across criminal, civil, consumer domains |
-| Generate summaries | Use Claude to generate plain-language summaries of judgment holdings |
+| Generate summaries | Use Groq API to generate plain-language summaries of judgment holdings |
 | Create Q&A pairs | Generate instruction-tuning pairs from judgment summaries |
 | Re-fine-tune | Extend training with judgment-aware data |
 | Update eval set | Add judgment-related evaluation questions |
@@ -47,7 +47,7 @@ Make statutory law accessible to anyone with a terminal. Not as a replacement fo
 | Task | Description |
 |------|-------------|
 | Source Hindi legal texts | Hindi versions of BNS, BNSS, IPC from official gazette |
-| Generate Hindi Q&A pairs | Claude-assisted bilingual pair generation |
+| Generate Hindi Q&A pairs | Groq-assisted bilingual pair generation |
 | Bilingual fine-tune | Extend training with Hindi data |
 | Evaluate Hindi accuracy | Create Hindi eval set, measure citation accuracy |
 | Update CLI | Support language flag (--lang hi/en) |
@@ -112,7 +112,7 @@ Data Pipeline → Training → Inference → Evaluation → Packaging → v1.0 R
 **Blockers:**
 1. India Code scraping reliability (site may change)
 2. Kaggle GPU availability (T4 quota limits)
-3. Claude API costs for synthetic generation
+3. API rate limits for synthetic generation
 4. Model weight storage (HuggingFace Hub upload)
 
 ---
