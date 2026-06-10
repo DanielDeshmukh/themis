@@ -4,7 +4,6 @@ Handles model loading, LoRA adapter attachment, and response generation.
 """
 
 from dataclasses import dataclass
-from pathlib import Path
 
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
@@ -32,88 +31,69 @@ class ThemisInference:
         self.device = self._resolve_device()
 
     def _resolve_device(self) -> str:
-        """Determine the best available device."""
-        if config.device == "auto":
-            if torch.cuda.is_available():
-                return "cuda"
-            elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
-                return "mps"
-            return "cpu"
-        return config.device
+        if torch.cuda.is_available():
+            return "cuda"
+        return "cpu"
 
-    def load_model(self, model_path: str = None, lora_path: str = None):
-        """Load the base model and attach LoRA adapter."""
-        model_path = model_path or config.base_model
-        lora_path = lora_path or str(config.local_model_path)
+    def load_model(self):
+        """Load the base model in 4-bit and attach the LoRA adapter from HuggingFace Hub."""
+        base_model_id = config.base_model
+        lora_adapter_id = config.lora_adapter
 
-        print(f"Loading base model: {model_path}")
+        print(f"Loading base model: {base_model_id}")
         print(f"Device: {self.device}")
 
-        # Quantization config for 4-bit loading
-        bnb_config = None
-        if config.load_in_4bit and self.device == "cuda":
-            bnb_config = BitsAndBytesConfig(
-                load_in_4bit=True,
-                bnb_4bit_compute_dtype=torch.float16,
-                bnb_4bit_quant_type="nf4",
-                bnb_4bit_use_double_quant=True,
-            )
+        # 4-bit quantization config
+        bnb_config = BitsAndBytesConfig(
+            load_in_4bit=True,
+            bnb_4bit_compute_dtype=torch.float16,
+            bnb_4bit_quant_type="nf4",
+            bnb_4bit_use_double_quant=True,
+        )
 
         # Load tokenizer
-        self.tokenizer = AutoTokenizer.from_pretrained(model_path)
+        self.tokenizer = AutoTokenizer.from_pretrained(base_model_id)
         if self.tokenizer.pad_token is None:
             self.tokenizer.pad_token = self.tokenizer.eos_token
 
-        # Load base model
+        # Load base model in 4-bit
         self.model = AutoModelForCausalLM.from_pretrained(
-            model_path,
+            base_model_id,
             quantization_config=bnb_config,
-            device_map="auto" if self.device == "cuda" else None,
-            torch_dtype=torch.float16 if self.device != "cpu" else None,
+            device_map="auto",
+            torch_dtype=torch.float16,
+            cache_dir=str(config.model_cache_dir),
             trust_remote_code=True,
         )
 
-        # Attach LoRA adapter if available
-        lora_path_obj = Path(lora_path)
-        if lora_path_obj.exists():
-            print(f"Attaching LoRA adapter: {lora_path}")
-            self.model = PeftModel.from_pretrained(self.model, lora_path)
-        else:
-            print(f"Warning: LoRA adapter not found at {lora_path}")
-            print("Running with base model only.")
+        # Attach LoRA adapter — downloads from HuggingFace Hub on first run
+        print(f"Loading LoRA adapter: {lora_adapter_id}")
+        self.model = PeftModel.from_pretrained(
+            self.model,
+            lora_adapter_id,
+            cache_dir=str(config.model_cache_dir),
+        )
 
         self.model.eval()
         print("Model loaded successfully.")
 
-    def format_prompt(self, query: str, history: list[dict] = None) -> str:
-        """Format the user query with system prompt and history."""
-        messages = [{"role": "system", "content": config.system_prompt}]
-
-        if history:
-            messages.extend(history)
-
-        messages.append({"role": "user", "content": query})
-
-        # Use Mistral chat template
-        prompt = self.tokenizer.apply_chat_template(
-            messages,
-            tokenize=False,
-            add_generation_prompt=True,
-        )
+    def format_prompt(self, question: str, history: list[dict] = None) -> str:
+        """Format the user question as an Alpaca-style instruction prompt."""
+        prompt = f"### Instruction:\n{question}\n\n### Response:\n"
         return prompt
 
     def generate(
         self,
-        query: str,
+        question: str,
         history: list[dict] = None,
         temperature: float = None,
         max_new_tokens: int = None,
     ) -> GenerationResult:
-        """Generate a response to a legal query."""
+        """Generate a response to a legal question."""
         if self.model is None:
             raise RuntimeError("Model not loaded. Call load_model() first.")
 
-        prompt = self.format_prompt(query, history)
+        prompt = self.format_prompt(question, history)
 
         # Tokenize
         inputs = self.tokenizer(prompt, return_tensors="pt")
@@ -138,8 +118,14 @@ class ThemisInference:
         new_tokens = outputs[0][input_tokens:]
         response = self.tokenizer.decode(new_tokens, skip_special_tokens=True)
 
+        # Strip the prompt prefix if echoed back
+        if response.startswith(prompt):
+            response = response[len(prompt):]
+
+        response = response.strip()
+
         # Add disclaimer if not present
-        if "DISCLAIMER" not in response and "disclaimer" not in response.lower():
+        if "disclaimer" not in response.lower():
             response = f"{response}\n\n{config.disclaimer}"
 
         return GenerationResult(
@@ -162,15 +148,15 @@ def get_inference() -> ThemisInference:
     return _inference
 
 
-def load_model(model_path: str = None, lora_path: str = None):
+def load_model():
     """Load the model (convenience function)."""
     inference = get_inference()
-    inference.load_model(model_path, lora_path)
+    inference.load_model()
     return inference
 
 
-def generate_response(query: str, history: list[dict] = None) -> str:
+def generate_response(question: str) -> str:
     """Generate a response (convenience function)."""
     inference = get_inference()
-    result = inference.generate(query, history)
+    result = inference.generate(question)
     return result.response

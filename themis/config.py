@@ -17,14 +17,14 @@ class Config:
     eval_dir: Path = field(default_factory=lambda: Path(__file__).parent / "eval")
 
     # Model
-    base_model: str = "mistralai/Mistral-7B-Instruct-v0.3"
-    lora_adapter: str = "danieldeshmukh/themis-mistral-7b-lora"
-    local_model_path: Path = field(default_factory=lambda: Path(__file__).parent.parent / "model" / "themis-lora")
+    base_model: str = "unsloth/mistral-7b-instruct-v0.3-bnb-4bit"
+    lora_adapter: str = "Daniel2503/themis-mistral-7b-lora"
+    model_cache_dir: Path = field(default_factory=lambda: Path(__file__).parent / "model")
 
     # Generation
     temperature: float = 0.3
     top_p: float = 0.9
-    max_new_tokens: int = 1024
+    max_new_tokens: int = 512
     repetition_penalty: float = 1.1
 
     # Device
@@ -32,16 +32,16 @@ class Config:
     load_in_4bit: bool = True
 
     # Training
-    lora_r: int = 16
-    lora_alpha: int = 32
+    lora_r: int = 8
+    lora_alpha: int = 16
     lora_dropout: float = 0.05
-    target_modules: list[str] = field(default_factory=lambda: ["q_proj", "k_proj", "v_proj", "o_proj"])
+    target_modules: list[str] = field(default_factory=lambda: ["q_proj", "v_proj"])
     epochs: int = 3
     batch_size: int = 2
     gradient_accumulation_steps: int = 4
     learning_rate: float = 2e-4
     warmup_ratio: float = 0.03
-    max_seq_length: int = 2048
+    max_seq_length: int = 512
 
     # Data
     target_laws: list[str] = field(default_factory=lambda: [
