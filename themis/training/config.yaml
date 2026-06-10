@@ -1,12 +1,12 @@
-# LoRA fine-tuning configuration for THEMIS
+# LoRA fine-tuning configuration for THEMIS v2
 
-base_model: mistralai/Mistral-7B-Instruct-v0.3
+base_model: unsloth/mistral-7b-instruct-v0.3-bnb-4bit
 method: lora
 
 lora:
   r: 16                          # LoRA rank
   lora_alpha: 32                 # Scaling factor
-  target_modules:                # Attention layers only
+  target_modules:                # All attention layers
     - q_proj
     - k_proj
     - v_proj
@@ -17,12 +17,12 @@ lora:
 
 training:
   epochs: 3
-  batch_size: 2
-  gradient_accumulation_steps: 4
+  batch_size: 1
+  gradient_accumulation_steps: 8
   learning_rate: 2e-4
   warmup_ratio: 0.03
   lr_scheduler: cosine
-  max_seq_length: 2048
+  max_seq_length: 1024
   fp16: true                     # T4 compatible
 
 unsloth:

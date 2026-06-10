@@ -31,17 +31,17 @@ class Config:
     device: str = "auto"
     load_in_4bit: bool = True
 
-    # Training (actual trained config — differs from inference; see training/config.yaml)
-    lora_r: int = 8
-    lora_alpha: int = 16
+    # Training (v2 target — see training/config.yaml for actual values used during training)
+    lora_r: int = 16
+    lora_alpha: int = 32
     lora_dropout: float = 0.05
-    target_modules: list[str] = field(default_factory=lambda: ["q_proj", "v_proj"])
+    target_modules: list[str] = field(default_factory=lambda: ["q_proj", "k_proj", "v_proj", "o_proj"])
     epochs: int = 3
-    batch_size: int = 2
-    gradient_accumulation_steps: int = 4
+    batch_size: int = 1
+    gradient_accumulation_steps: int = 8
     learning_rate: float = 2e-4
     warmup_ratio: float = 0.03
-    max_seq_length: int = 512
+    max_seq_length: int = 1024
 
     # Data
     target_laws: list[str] = field(default_factory=lambda: [
