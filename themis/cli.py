@@ -189,7 +189,8 @@ def scrape(
         "--law", "-l",
         help="Law to scrape: all, bns, bnss, bsa, cpa, rti, ipc",
     ),
-    delay: float = typer.Option(1.0, "--delay", "-d", help="Delay between requests (seconds)"),
+    delay: float = typer.Option(3.0, "--delay", "-d", help="Delay between requests (seconds)"),
+    verbose: bool = typer.Option(True, "--verbose/--quiet", "-v/-q", help="Show section text snippets"),
 ):
     """Scrape legal data from India Code."""
     from .data.scraper.indiacode import IndiaCodeScraper, scrape_target_laws
@@ -212,13 +213,16 @@ def scrape(
     elif law.lower() in LAW_MAP:
         full_name = LAW_MAP[law.lower()]
         console.print(f"[cyan]Scraping: {full_name}[/cyan]\n")
-        scraper = IndiaCodeScraper(delay=delay)
+        scraper = IndiaCodeScraper(delay=delay, verbose=verbose)
         results = scraper.search_act(full_name)
         if results:
             best = results[0]
             act = scraper.scrape_act(best["handle_id"], full_name)
-            scraper.save_act(act)
-            console.print(f"\n[green]Scraped {len(act.sections)} sections from {act.name}[/green]")
+            if act:
+                scraper.save_act(act)
+                console.print(f"\n[green]Scraped {len(act.sections)} sections from {act.name}[/green]")
+            else:
+                console.print(f"[red]Failed to fetch act page for {full_name}[/red]")
         else:
             console.print(f"[red]No results found for '{full_name}'[/red]")
     else:

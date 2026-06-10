@@ -1,11 +1,13 @@
 """India Code (indiacode.nic.in) scraper for Bare Act sections.
 
 Scrapes central acts from India Code website, extracting section numbers,
-titles, and full text. Downloads PDFs as fallback for parsing.
+titles, and full text. Handles server errors gracefully and continues
+to the next law on failure.
 """
 
 import json
 import re
+import sys
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -15,6 +17,11 @@ import requests
 from bs4 import BeautifulSoup
 
 from ...config import config
+
+
+def _print(msg: str, flush: bool = True):
+    """Print with automatic flush for real-time output."""
+    print(msg, flush=flush)
 
 
 @dataclass
@@ -44,12 +51,21 @@ class Act:
 
 
 class IndiaCodeScraper:
-    """Scraper for India Code (indiacode.nic.in)."""
+    """Scraper for India Code (indiacode.nic.in).
+
+    Resilient design:
+    - 3s delay between requests (configurable)
+    - 5 retries with exponential backoff (1s, 2s, 4s, 8s, 16s)
+    - 500/502/503 errors caught and retried
+    - Individual section failures logged and skipped
+    - Individual law failures logged and skipped (continues to next law)
+    """
 
     BASE_URL = config.india_code_base
 
-    def __init__(self, delay: float = None):
-        self.delay = delay or config.request_delay
+    def __init__(self, delay: float = None, verbose: bool = False):
+        self.delay = delay or 3.0
+        self.verbose = verbose
         self.session = requests.Session()
         self.session.headers.update({
             "User-Agent": "THEMIS-Legal-AI/1.0 (Academic Research)",
@@ -57,22 +73,41 @@ class IndiaCodeScraper:
             "Accept-Language": "en-US,en;q=0.9",
         })
 
-    def _get(self, url: str, retries: int = None, params: dict = None) -> requests.Response:
-        """GET request with retry and rate limiting."""
-        retries = retries or config.max_retries
+    def _get(self, url: str, retries: int = 5, params: dict = None) -> requests.Response:
+        """GET request with retry, exponential backoff, and rate limiting."""
         for attempt in range(retries):
             try:
                 time.sleep(self.delay)
                 resp = self.session.get(url, params=params, timeout=30)
+
+                if resp.status_code >= 500:
+                    wait = min(2 ** (attempt + 1), 30)
+                    _print(f"  Retry {attempt + 1}/{retries} after {wait}s: "
+                           f"HTTP {resp.status_code}")
+                    time.sleep(wait)
+                    continue
+
                 resp.raise_for_status()
                 return resp
+
+            except requests.exceptions.Timeout:
+                wait = min(2 ** (attempt + 1), 30)
+                _print(f"  Retry {attempt + 1}/{retries} after {wait}s: Timeout")
+                time.sleep(wait)
+
+            except requests.ConnectionError:
+                wait = min(2 ** (attempt + 1), 30)
+                _print(f"  Retry {attempt + 1}/{retries} after {wait}s: Connection error")
+                time.sleep(wait)
+
             except requests.RequestException as e:
                 if attempt == retries - 1:
                     raise
-                wait = 2 ** attempt
-                print(f"  Retry {attempt + 1}/{retries} after {wait}s: {e}")
+                wait = min(2 ** (attempt + 1), 30)
+                _print(f"  Retry {attempt + 1}/{retries} after {wait}s: {e}")
                 time.sleep(wait)
-        raise RuntimeError(f"Failed after {retries} retries")
+
+        raise RuntimeError(f"Failed after {retries} retries for {url}")
 
     def search_act(self, query: str) -> list[dict]:
         """Search for an act by name. Returns list of matching acts."""
@@ -101,7 +136,6 @@ class IndiaCodeScraper:
             if not link:
                 continue
             href = link.get("href", "")
-            # Extract handle ID from href
             match = re.search(r"/handle/(\d+/\d+)", href)
             if match:
                 results.append({
@@ -122,20 +156,16 @@ class IndiaCodeScraper:
     def extract_section_links(self, soup: BeautifulSoup) -> list[dict]:
         """Extract section links from act page."""
         sections = []
-        # Find all section links in the accordion
         for link in soup.find_all("a", class_="title"):
             href = link.get("href", "")
             text = link.get_text(strip=True)
-            # Match section number pattern
             match = re.search(r"sectionno=(\d+)", href)
             if match:
                 section_no = match.group(1)
-                # Extract act_id and sectionId from URL
                 act_id_match = re.search(r"actid=([^&]+)", href)
                 section_id_match = re.search(r"sectionId=(\d+)", href)
                 act_id = act_id_match.group(1) if act_id_match else ""
                 section_id = section_id_match.group(1) if section_id_match else ""
-                # Clean section title
                 title_match = re.search(r"Section \d+\.\s*(.*)", text)
                 title = title_match.group(1).strip() if title_match else text
                 sections.append({
@@ -150,29 +180,24 @@ class IndiaCodeScraper:
     def extract_chapters(self, soup: BeautifulSoup) -> dict[str, str]:
         """Extract chapter structure mapping section ranges to chapter names."""
         chapters = {}
-        # Find chapter headings
         for li in soup.find_all("li"):
             b = li.find("b")
             if b and "CHAPTER" in b.text:
                 chapter_name = b.text.strip()
-                # Find sub-sections under this chapter
                 sub_ul = li.find("ul")
                 if sub_ul:
                     for a in sub_ul.find_all("a", class_="headingtwo"):
                         heading = a.text.strip()
-                        # This chapter covers sections in this range
                         chapters[heading] = chapter_name
         return chapters
 
     def fetch_section_text(self, section_url: str, act_id: str = "", section_id: str = "") -> str:
         """Fetch the full text of a single section via AJAX endpoint."""
         try:
-            # Use the AJAX endpoint that loads section content
             ajax_url = f"{self.BASE_URL}/SectionPageContent"
             params = {"actid": act_id, "sectionID": section_id}
             resp = self._get(ajax_url, params=params)
-            
-            # Response is JSON with 'content' and 'footnote' fields
+
             try:
                 data = resp.json()
                 content = data.get("content", "")
@@ -180,35 +205,38 @@ class IndiaCodeScraper:
                 full_text = content
                 if footnote:
                     full_text += "\n\n" + footnote
-                # Clean HTML tags
                 if full_text:
                     soup = BeautifulSoup(full_text, "html.parser")
                     return soup.get_text(separator="\n", strip=True)
             except Exception:
-                # Fallback: treat as HTML
                 soup = BeautifulSoup(resp.text, "html.parser")
                 return soup.get_text(separator="\n", strip=True)
-            
+
         except Exception as e:
-            print(f"  Warning: Failed to fetch section text: {e}")
+            _print(f"    Warning: Failed to fetch section text: {e}")
         return ""
 
-    def scrape_act(self, handle_id: str, act_name: str = "") -> Act:
-        """Scrape a complete act by its handle ID."""
-        print(f"Scraping act: {handle_id}")
+    def scrape_act(self, handle_id: str, act_name: str = "") -> Act | None:
+        """Scrape a complete act by its handle ID.
 
-        # Get act page
-        soup = self.get_act_page(handle_id)
+        Returns None if the act page cannot be fetched.
+        Individual section failures are logged and skipped.
+        """
+        _print(f"Scraping act: {handle_id}")
 
-        # Extract metadata
+        try:
+            soup = self.get_act_page(handle_id)
+        except Exception as e:
+            _print(f"  ERROR: Could not fetch act page for {handle_id}: {e}")
+            _print(f"  Skipping this act.")
+            return None
+
         title_tag = soup.find("td", id="short_title")
         title = title_tag.text.strip() if title_tag else act_name
 
-        # Extract year from title
         year_match = re.search(r"(\d{4})", title)
         year = year_match.group(1) if year_match else ""
 
-        # Extract act ID
         act_id_tag = soup.find("td", class_="metadataFieldValue", string=re.compile(r"\d{4}-\d+"))
         act_id = act_id_tag.text.strip() if act_id_tag else handle_id
 
@@ -219,31 +247,56 @@ class IndiaCodeScraper:
             handle_id=handle_id,
         )
 
-        # Extract section links
         section_links = self.extract_section_links(soup)
-        print(f"  Found {len(section_links)} sections")
+        total = len(section_links)
+        _print(f"  Found {total} sections")
 
-        # Extract chapter structure
-        chapters = self.extract_chapters(soup)
+        if not section_links:
+            _print(f"  Warning: No sections found for {title}")
+            return act
 
         # Fetch each section
+        failed_sections = 0
+        total_chars = 0
         for i, sec_info in enumerate(section_links):
-            print(f"  Fetching section {sec_info['section_number']}/{len(section_links)}...")
-            text = self.fetch_section_text(
-                sec_info["url"],
-                act_id=sec_info.get("act_id", ""),
-                section_id=sec_info.get("section_id", ""),
-            )
+            sec_num = sec_info["section_number"]
+            try:
+                text = self.fetch_section_text(
+                    sec_info["url"],
+                    act_id=sec_info.get("act_id", ""),
+                    section_id=sec_info.get("section_id", ""),
+                )
+                section = Section(
+                    section_number=sec_num,
+                    title=sec_info["title"],
+                    text=text,
+                    act_name=title,
+                )
+                act.sections.append(section)
+                total_chars += len(text)
 
-            section = Section(
-                section_number=sec_info["section_number"],
-                title=sec_info["title"],
-                text=text,
-                act_name=title,
-            )
-            act.sections.append(section)
+                # Show snippet for first 3 sections and every 50th after
+                if self.verbose and (i < 3 or (i + 1) % 50 == 0):
+                    snippet = text[:120].replace("\n", " ") if text else "(empty)"
+                    _print(f"    [{sec_num}] {sec_info['title'][:50]}")
+                    _print(f"         {snippet}...")
 
-        print(f"  Scraped {len(act.sections)} sections from {title}")
+            except Exception as e:
+                failed_sections += 1
+                _print(f"    Skipping section {sec_num}: {e}")
+
+            # Progress every 10 sections
+            done = i + 1
+            if done % 10 == 0 or done == total:
+                pct = (done / total) * 100
+                char_k = total_chars / 1024
+                _print(f"  [{done}/{total}] {pct:.0f}% | "
+                       f"collected: {char_k:.1f} KB | "
+                       f"failed: {failed_sections}")
+
+        _print(f"  Done: {len(act.sections)}/{total} sections | "
+               f"{total_chars/1024:.1f} KB collected"
+               + (f" | {failed_sections} failed" if failed_sections else ""))
         return act
 
     def save_act(self, act: Act, output_dir: Path = None):
@@ -251,7 +304,6 @@ class IndiaCodeScraper:
         output_dir = output_dir or config.raw_dir
         output_dir.mkdir(parents=True, exist_ok=True)
 
-        # Create filename from act name
         safe_name = re.sub(r"[^\w\s-]", "", act.name.lower())
         safe_name = re.sub(r"\s+", "_", safe_name.strip())
         filepath = output_dir / f"{safe_name}.json"
@@ -282,32 +334,65 @@ class IndiaCodeScraper:
         with open(filepath, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
 
-        print(f"  Saved to {filepath}")
+        _print(f"  Saved to {filepath}")
         return filepath
 
 
 def scrape_target_laws():
-    """Scrape all target laws for THEMIS training."""
-    scraper = IndiaCodeScraper()
+    """Scrape all target laws for THEMIS training.
+
+    Resilient: if one law fails (server error, timeout, etc.),
+    it logs the error and continues to the next law.
+    """
+    scraper = IndiaCodeScraper(delay=3.0, verbose=True)
+
+    succeeded = []
+    failed = []
 
     for law_name in config.target_laws:
-        print(f"\n{'='*60}")
-        print(f"Searching for: {law_name}")
-        print("=" * 60)
+        _print(f"\n{'='*60}")
+        _print(f"Searching for: {law_name}")
+        _print("=" * 60)
 
-        results = scraper.search_act(law_name)
-        if not results:
-            print(f"  No results found for '{law_name}'")
+        try:
+            results = scraper.search_act(law_name)
+            if not results:
+                _print(f"  No results found for '{law_name}'")
+                failed.append((law_name, "No search results"))
+                continue
+
+            best = results[0]
+            _print(f"  Found: {best['short_title']} (Handle: {best['handle_id']})")
+
+            act = scraper.scrape_act(best["handle_id"], law_name)
+            if act is None:
+                failed.append((law_name, "Could not fetch act page"))
+                continue
+
+            if not act.sections:
+                failed.append((law_name, "No sections scraped"))
+                continue
+
+            scraper.save_act(act)
+            succeeded.append((law_name, len(act.sections)))
+
+        except Exception as e:
+            _print(f"  ERROR scraping {law_name}: {e}")
+            failed.append((law_name, str(e)))
             continue
 
-        # Take the first (most relevant) result
-        best = results[0]
-        print(f"  Found: {best['short_title']} (Handle: {best['handle_id']})")
-
-        act = scraper.scrape_act(best["handle_id"], law_name)
-        scraper.save_act(act)
-
-        print(f"  Total sections scraped: {len(act.sections)}")
+    # Summary
+    _print(f"\n{'='*60}")
+    _print("SCRAPING SUMMARY")
+    _print("=" * 60)
+    _print(f"Succeeded: {len(succeeded)}/{len(config.target_laws)}")
+    for name, count in succeeded:
+        _print(f"  OK  {name}: {count} sections")
+    if failed:
+        _print(f"Failed: {len(failed)}")
+        for name, reason in failed:
+            _print(f"  FAIL  {name}: {reason}")
+    _print("=" * 60)
 
 
 if __name__ == "__main__":
