@@ -14,12 +14,14 @@
 <p>
   <img src="https://img.shields.io/badge/model-Mistral%207B%20LoRA-blueviolet" />
   <img src="https://img.shields.io/badge/domain-Indian%20Law%20%7C%20BNS%20%7C%20IPC-crimson" />
+  <img src="https://img.shields.io/badge/status-v1%20trained%20%7C%20v2%20in%20progress-orange" />
   <img src="https://img.shields.io/badge/python-3.11+-brightgreen" />
-  <img src="https://img.shields.io/badge/fine--tuning-LoRA%20%7C%20Unsloth-orange" />
   <img src="https://img.shields.io/badge/license-MIT-lightgrey" />
 </p>
 
 *"Not retrieval. Not lookup. Pure legal reasoning, baked into weights."*
+
+**HuggingFace:** [`Daniel2503/themis-mistral-7b-lora`](https://huggingface.co/Daniel2503/themis-mistral-7b-lora)
 
 </div>
 
@@ -27,47 +29,129 @@
 
 ## What is THEMIS?
 
-THEMIS is a domain-specific large language model fine-tuned on Indian statutory law. It is **not** a retrieval system, a search engine, or a chatbot wrapper around an existing API. It is a **parametric knowledge model** — one where legal understanding of the Bharatiya Nyaya Sanhita (BNS), the Indian Penal Code (IPC), the Bharatiya Nagarik Suraksha Sanhita (BNSS), and allied statutes has been baked directly into the model weights through supervised fine-tuning.
+THEMIS is a domain-specific large language model fine-tuned on Indian statutory law. It is **not** a retrieval system, a search engine, or a chatbot wrapper around an existing API. It is a **parametric knowledge model** — one where legal understanding of the Bharatiya Nyaya Sanhita (BNS), the Indian Penal Code (IPC), the Bharatiya Nagarik Suraksha Sanhita (BNSS), and allied statutes is baked directly into the model weights through supervised fine-tuning.
 
 Where HECTOR retrieves — THEMIS reasons.
 
 ---
 
-## The Core Difference: THEMIS vs HECTOR
+## Current State — v1 (Honest Assessment)
 
-| Dimension | HECTOR | THEMIS |
-|-----------|--------|--------|
-| Architecture | RAG (Retrieval-Augmented Generation) | Parametric Fine-Tuning (LoRA) |
-| Knowledge source | External vector database (Qdrant) | Model weights |
-| Needs documents at runtime | Yes — ingests Bare Acts and commentaries | No — knowledge is in the model |
-| Hallucination control | Chain-of-Verification + source grounding | Training data quality + eval harness |
-| Response style | Structured legal research output | Conversational plain-language with citations |
-| Best for | Deep legal research, IPC↔BNS mapping | Citizen Q&A, quick legal orientation |
-| Deployment | FastAPI + Next.js frontend | CLI (offline capable) |
+> This section exists because honest evaluation is more valuable than a polished demo.
 
-They are complementary systems. HECTOR is the researcher. THEMIS is the explainer.
+**What v1 demonstrates:**
+- ✅ End-to-end fine-tuning pipeline working on Kaggle free T4 GPU
+- ✅ LoRA adapter trained and published to HuggingFace Hub
+- ✅ Alpaca instruction format learned — model responds in legal assistant style
+- ✅ Disclaimer behavior trained correctly
+- ✅ Response structure (citations, recommendations, disclaimers) partially learned
+
+**What v1 does NOT do well:**
+- ❌ BNS 2023 abbreviation recognition — model confuses "BNS" with unrelated expansions
+- ❌ Accurate section number citation — hallucinates section numbers on specific queries
+- ❌ Deep statutory knowledge retention — 1,939 pairs was insufficient for domain grounding
+- ❌ IPC → BNS mapping — transition knowledge not retained at this data scale
+
+**Root cause analysis:**
+
+Mistral 7B Instruct v0.3 has near-zero BNS 2023 knowledge in its pretraining data — BNS was enacted in December 2023, at or after Mistral's training cutoff. This means there is no foundation for the LoRA to build on. The fine-tune taught the model *how to respond like a lawyer* but not *what Indian law says*.
+
+The technical constraints that caused this:
+
+| Parameter | v1 Value | Minimum Needed | v2 Target |
+|-----------|----------|----------------|-----------|
+| LoRA rank | 8 | 16 | 32 |
+| Sequence length | 512 tokens | 1,024 tokens | 2,048 tokens |
+| Training pairs | 1,939 | 10,000+ | 50,000–90,000 |
+| Target modules | q_proj, v_proj | q,k,v,o proj | q,k,v,o + MLP |
+| Epochs | 3 | 3–5 | 3–5 |
 
 ---
 
-## What THEMIS Does
+## The Goal — v3 Production Target
 
-- Answers questions about Indian law in plain, citizen-readable language
-- Cites specific BNS / IPC / BNSS / Consumer Protection Act sections in every response
-- Maps legacy IPC sections to their BNS equivalents where applicable
-- Handles criminal law, civil disputes, property rights, consumer rights, RTI, and procedural queries
-- Runs entirely offline via CLI — no API calls, no internet dependency after setup
-- Refuses to speculate — trained to say "consult a lawyer" when the query is beyond statutory scope
+THEMIS v3 is designed to match the data depth of production medical RAG systems — comparable to the 90,000+ clinical records in [Ella](https://github.com/DanielDeshmukh/ella).
+
+**Target: 50,000–90,000 training pairs** covering:
+
+| Legal Domain | Target Pairs | Sources |
+|-------------|-------------|---------|
+| BNS 2023 — Criminal Law | 15,000 | India Code full text, section-by-section Q&A |
+| IPC 1860 — Legacy Criminal Law | 10,000 | India Code, comparative IPC↔BNS mapping |
+| BNSS 2023 — Criminal Procedure | 8,000 | India Code full text |
+| BSA 2023 — Evidence Act | 5,000 | India Code full text |
+| Consumer Protection Act 2019 | 6,000 | India Code + NCDRC judgment summaries |
+| RTI Act 2005 | 3,000 | India Code + CIC decisions |
+| Indian Contract Act 1872 | 5,000 | India Code full text |
+| Transfer of Property Act 1882 | 4,000 | India Code full text |
+| Supreme Court landmark judgments | 10,000 | Indian Kanoon — top 500 judgments parsed |
+| IPC → BNS transition mapping | 8,000 | Section-level comparison pairs |
+| **Total** | **74,000** | |
+
+At this scale, THEMIS becomes a model that has genuinely read Indian law — not a model that learned to sound like a lawyer.
 
 ---
 
-## What THEMIS Does NOT Do
+## What Happens Next — Roadmap
 
-- **Not a lawyer substitute.** THEMIS provides legal orientation, not legal advice. Every response includes a disclaimer directing users to seek qualified counsel for their specific situation.
-- **Not a retrieval system.** It does not search documents at runtime. It cannot cite page numbers or PDFs. That is HECTOR's job.
-- **Not trained on case law.** THEMIS knows statutes and procedural law. Judgments, precedents, and High Court/Supreme Court rulings are outside its training scope in v1.
-- **Not multilingual in v1.** English only. Hindi support is on the roadmap.
-- **Not a general-purpose LLM.** Do not expect it to write code, summarize articles, or answer non-legal queries. It will decline.
-- **Not accurate for state-specific laws.** Stamp duty, tenancy, land records — these vary by state and are not covered.
+### v2 — Knowledge Foundation (In Progress)
+
+**Target:** 10,000–15,000 pairs | LoRA rank 16 | Sequence 1,024 | T4 x2
+
+- [ ] Expand dataset to 15,000 pairs (BNS + IPC + BNSS full coverage)
+- [ ] Retrain with rank 16, all 4 attention modules (q,k,v,o)
+- [ ] Sequence length 1,024 for longer statutory text
+- [ ] Add BNS abbreviation disambiguation pairs explicitly
+- [ ] Evaluate on 100-question held-out set with citation accuracy metric
+- [ ] Publish v2 adapter to HuggingFace
+
+**Success criteria:** Model correctly identifies BNS as Bharatiya Nyaya Sanhita and cites accurate section numbers on 70%+ of criminal law queries.
+
+---
+
+### v3 — Production Grade (Planned)
+
+**Target:** 50,000–90,000 pairs | LoRA rank 32 | Sequence 2,048 | A100 (Colab Pro or RunPod)
+
+- [ ] Full India Code corpus ingestion (all central acts)
+- [ ] Indian Kanoon top 1,000 judgment summaries
+- [ ] IPC → BNS complete transition mapping (all 511 sections)
+- [ ] Hindi language support (bilingual fine-tune)
+- [ ] RAGAS-style evaluation harness with citation F1 scoring
+- [ ] Systematic hallucination rate measurement
+- [ ] Publish v3 adapter to HuggingFace with full model card
+
+**Success criteria:** Citation accuracy >85% on held-out eval set. Hallucination rate <10% on factual section number queries.
+
+---
+
+### v4 — THEMIS-HECTOR Hybrid (Vision)
+
+The long-term architecture unifies THEMIS (parametric reasoning) with HECTOR (retrieval grounding):
+
+```
+User Query
+    │
+    ▼
+┌─────────────────────────────────────┐
+│         Query Classifier            │
+│  "Parametric or retrieval?"         │
+└──────────────┬──────────────────────┘
+               │
+       ┌───────┴───────┐
+       ▼               ▼
+  ┌─────────┐     ┌─────────┐
+  │  THEMIS │     │ HECTOR  │
+  │ (reason)│     │(retrieve│
+  │         │     │+ verify)│
+  └────┬────┘     └────┬────┘
+       └───────┬───────┘
+               ▼
+      Unified Legal Response
+      with citations + reasoning
+```
+
+THEMIS handles citizen-level Q&A with parametric reasoning. HECTOR handles deep legal research requiring source-level PDF citations. A unified router dispatches based on query complexity.
 
 ---
 
@@ -79,7 +163,7 @@ themis/
 ├── infer.py                # Model loading and inference engine
 ├── config.py               # Model path, generation params, device config
 ├── eval/
-│   ├── run_eval.py         # Evaluation harness (50 held-out questions)
+│   ├── run_eval.py         # Evaluation harness
 │   ├── metrics.py          # Citation accuracy, refusal rate, ROUGE-L
 │   └── eval_set.json       # Ground truth evaluation dataset
 ├── data/
@@ -87,18 +171,14 @@ themis/
 │   │   ├── kanoon.py       # Indian Kanoon judgment scraper
 │   │   └── indiacode.py    # India Code Bare Acts parser
 │   ├── synthetic/
-│   │   └── generate.py     # Groq/template Q&A pair generation
+│   │   └── generate.py     # Claude-assisted Q&A pair generation
 │   ├── preprocess.py       # Cleaning, deduplication, formatting
-│   └── dataset.json        # Final Alpaca-format training dataset (1,939 pairs)
+│   └── dataset.json        # Training dataset (v1: 1,939 pairs)
 ├── training/
-│   ├── finetune.py         # Unsloth + LoRA training script (Kaggle)
-│   ├── config.yaml         # LoRA rank, alpha, target modules, epochs
+│   ├── finetune.py         # Unsloth + LoRA training script
+│   ├── config.yaml         # LoRA hyperparameters
 │   └── push_to_hub.py      # HuggingFace Hub upload
-├── notebooks/
-│   └── themis_inference.ipynb  # Kaggle inference notebook
-├── model/                  # Local model weights (gitignored)
-└── tests/
-    └── test_infer.py       # Unit tests for inference pipeline
+└── model/                  # Local model weights (gitignored)
 ```
 
 ---
@@ -107,240 +187,155 @@ themis/
 
 | Layer | Technology | Purpose |
 |-------|-----------|---------|
-| Base Model | Mistral 7B Instruct v0.3 (4-bit) | Foundation — strong instruction following |
-| Fine-tuning Method | LoRA rank=8, alpha=16 | Parameter-efficient training on free compute |
-| Training Framework | Unsloth | 2x faster LoRA, fits in 16GB VRAM |
-| Training Platform | Kaggle (free T4 GPU) | Zero cost fine-tuning |
-| Dataset | 1,939 Alpaca-format Q&A pairs | BNS, BNSS, IPC, Consumer Law, RTI |
-| Data Sources | Indian Kanoon + India Code + Synthetic | Scraping + generation pipeline |
-| CLI Framework | Typer + Rich | Beautiful terminal interface |
-| Inference | Transformers + PEFT + BitsAndBytes | 4-bit quantized loading + LoRA |
-| Notebook | Kaggle T4 GPU | Interactive demo + evaluation |
-| Model Hosting | HuggingFace Hub | Free public model hosting |
+| Base Model | Mistral 7B Instruct v0.3 | Foundation — strong instruction following |
+| Fine-tuning Method | LoRA (Low-Rank Adaptation) | Parameter-efficient training |
+| Training Framework | Unsloth | 2x faster LoRA, VRAM optimized |
+| Training Platform | Kaggle free T4 (v1) → RunPod A100 (v3) | Compute |
+| Dataset Format | Alpaca instruction tuning | Standard SFT format |
+| Data Sources | India Code + Indian Kanoon + Synthetic | Scraping + generation |
+| Synthetic Generation | Claude API | Q&A pair generation from Bare Acts |
+| CLI | Typer + Rich | Terminal interface |
+| Inference | HuggingFace Transformers + PEFT | LoRA adapter loading |
+| Evaluation | Custom harness + citation F1 | Quality measurement |
+| Model Hosting | HuggingFace Hub | Public model access |
 
 ---
 
-## CLI Interface
+## Dataset Construction
 
-THEMIS runs as a Rich-powered terminal application. No browser, no server, no API key required at inference time.
+### v1 Dataset (Current — 1,939 pairs)
 
-### Installation
-
-```bash
-pip install themis-law
-```
-
-### Quick Start
-
-**Option A — Kaggle (recommended):** Run the [THEMIS Inference Notebook](https://www.kaggle.com/datasets/daniel2503/themis-inference) on a free T4 GPU. No local setup needed.
-
-**Option B — Local CLI:**
-```bash
-pip install themis-law
-themis ask "What is BNS Section 118?"
-themis chat
-```
-
-> **Note:** Requires a CUDA GPU for reasonable performance. The base model is ~4GB in 4-bit quantization.
-
-### Commands
-
-| Command | Description |
-|---------|-------------|
-| `themis ask "your question"` | Single-shot legal Q&A |
-| `themis chat` | Interactive multi-turn session |
-
-### Terminal Experience
-
-```
-████████╗██╗  ██╗███████╗███╗   ███╗██╗███████╗
-╚══██╔══╝██║  ██║██╔════╝████╗ ████║██║██╔════╝
-   ██║   ███████║█████╗  ██╔████╔██║██║███████╗
-   ██║   ██╔══██║██╔══╝  ██║╚██╔╝██║██║╚════██║
-   ██║   ██║  ██║███████╗██║ ╚═╝ ██║██║███████║
-   ╚═╝   ╚═╝  ╚═╝╚══════╝╚═╝     ╚═╝╚═╝╚══════╝
-
-THEMIS v1.0.0  | Model: Daniel2503/themis-mistral-7b-lora
-Domain: BNS 2023 | BNSS 2023 | IPC | Consumer Law | RTI Act
-
-? Ask a legal question (or 'exit' to quit): If my employer hasn't paid salary for 2 months, what can I do?
-
-Loading model...
-THEMIS is thinking...
-
-LEGAL ORIENTATION
-============================================================
-
-Non-payment of wages is actionable under multiple statutes in India:
-
-[1] Payment of Wages Act, 1936 — Section 15
-    File a complaint before the Authority appointed
-    under this Act (typically a Labour Commissioner).
-    Claim includes wages + compensation up to 10x.
-
-[2] BNS 2023 — Section 316 (Criminal Breach of Trust)
-    If deliberate withholding is proven, this may
-    attract criminal liability on the employer.
-
-[3] Industrial Disputes Act, 1947 — Section 33C
-    Workmen can recover dues directly through the
-    Labour Court without filing a civil suit.
-
-DISCLAIMER: This is legal orientation, not legal advice.
-Consult a qualified advocate for your specific situation.
-
-Tokens: 24 in / 187 out | Device: cuda
-```
-
----
-
-## Dataset
-
-### Sources
-
-| Source | Type | Volume |
-|--------|------|--------|
-| India Code (indiacode.nic.in) | BNS, BNSS, BSA, Consumer Protection Act, RTI Act — full text | ~800 sections parsed |
-| Indian Kanoon (indiankanoon.org) | Selected judgment summaries across criminal/civil/consumer domains | ~500 judgments |
-| Synthetic (Groq/template) | Q&A pairs generated from parsed Bare Act sections | ~1,500 pairs |
-| **Total** | | **~1,939 instruction pairs** |
-
-### Format
-
-All training data follows the Alpaca instruction tuning format:
+Generated from India Code Bare Acts using Claude API for synthetic Q&A pair generation. Format:
 
 ```json
 {
-  "instruction": "What is the punishment for causing hurt by dangerous weapons under the new Indian law?",
+  "instruction": "What does Section 303 of the Bharatiya Nyaya Sanhita say about theft?",
   "input": "",
-  "output": "Under Section 118 of the Bharatiya Nyaya Sanhita (BNS) 2023, whoever causes grievous hurt by means of any instrument for shooting, stabbing or cutting, or any instrument which, used as a weapon of offence, is likely to cause death, or by means of fire or any heated substance, or by means of any poison or any corrosive substance, shall be punished with imprisonment for life, or with imprisonment of either description for a term which may extend to ten years, and shall also be liable to fine. This replaces Section 326 of the Indian Penal Code (IPC) 1860."
+  "output": "Section 303 of the Bharatiya Nyaya Sanhita (BNS) 2023 defines theft as..."
 }
 ```
 
+### v2 Dataset Plan (10,000–15,000 pairs)
+
+Expanding sources to cover full BNS, IPC, BNSS, BSA statutory text with explicit abbreviation disambiguation pairs.
+
+### v3 Dataset Plan (50,000–90,000 pairs)
+
+Full India Code corpus + Indian Kanoon judgment summaries + complete IPC→BNS transition mapping. At this scale, the dataset size matches the clinical corpus depth of production medical AI systems.
+
 ---
 
-## Fine-Tuning Configuration
+## Training Configuration
+
+### v1 (Completed)
 
 ```yaml
-# config.yaml
 base_model: unsloth/mistral-7b-instruct-v0.3-bnb-4bit
-method: lora
+lora_r: 8
+lora_alpha: 16
+target_modules: [q_proj, v_proj]
+lora_dropout: 0
+epochs: 3
+batch_size: 1
+gradient_accumulation: 8
+learning_rate: 2e-4
+max_seq_length: 512
+platform: Kaggle T4 (free)
+training_pairs: 1,939
+```
 
-lora:
-  r: 8                            # LoRA rank
-  lora_alpha: 16                  # Scaling factor
-  target_modules:                 # Attention layers only
-    - q_proj
-    - v_proj
-  lora_dropout: 0.05
-  bias: none
-  task_type: CAUSAL_LM
+### v2 (Planned)
 
-training:
-  epochs: 3
-  batch_size: 2
-  gradient_accumulation_steps: 4
-  learning_rate: 2e-4
-  warmup_ratio: 0.03
-  lr_scheduler: cosine
-  max_seq_length: 512
-  fp16: true                     # T4 compatible
+```yaml
+lora_r: 16
+target_modules: [q_proj, k_proj, v_proj, o_proj]
+max_seq_length: 1024
+training_pairs: 15,000
+platform: Kaggle T4 x2
+```
 
-unsloth:
-  use_gradient_checkpointing: true
-  random_state: 42
+### v3 (Planned)
+
+```yaml
+lora_r: 32
+target_modules: [q_proj, k_proj, v_proj, o_proj, gate_proj, up_proj, down_proj]
+max_seq_length: 2048
+training_pairs: 74,000
+platform: RunPod A100 (40GB)
 ```
 
 ---
 
-## Evaluation
+## Evaluation Framework
 
-THEMIS ships with a 50-question held-out evaluation set covering:
+THEMIS uses a 3-tier evaluation system:
 
-| Category | Questions | Metric |
-|----------|-----------|--------|
-| Criminal Law (BNS) | 15 | Citation accuracy |
-| Civil / Property | 10 | Factual consistency |
-| Consumer Rights | 10 | Response completeness |
-| Procedural (BNSS) | 8 | Step accuracy |
-| IPC → BNS mapping | 7 | Section mapping correctness |
+**Tier 1 — Citation Accuracy**
+Does the response cite the correct section number?
+Target: >85% on criminal law queries by v3.
 
-### Metrics
+**Tier 2 — Hallucination Rate**
+Does the model fabricate section numbers or act names?
+Target: <10% hallucination rate by v3.
+Current v1 rate: ~60% on BNS-specific queries (abbreviation confusion).
 
-- **Citation Accuracy** — Does the response cite the correct section number?
-- **Refusal Rate** — Does the model correctly refuse out-of-scope queries?
-- **ROUGE-L** — Overlap with ground truth responses
-- **Hallucination Rate** — Manual spot-check of 20 responses for fabricated sections
-
-Run evaluation:
-
-```bash
-themis eval --verbose
-```
+**Tier 3 — Refusal Rate**
+Does the model correctly decline out-of-scope queries?
+Target: >95% correct refusal on state-specific law queries.
 
 ---
 
-## Roadmap
+## Known Limitations (v1)
 
-| Version | Milestone |
-|---------|-----------|
-| v1.0 | BNS, BNSS, BSA, Consumer Protection Act, RTI Act — criminal + civil + consumer |
-| v1.1 | Add Supreme Court landmark judgment summaries |
-| v1.2 | Hindi language support (bilingual fine-tune) |
-| v2.0 | THEMIS-HECTOR bridge — RAG + parametric hybrid inference |
-| v2.1 | Web UI wrapper for non-technical users |
-
----
-
-## Relationship to HECTOR
-
-THEMIS and HECTOR are designed to eventually operate as a hybrid system:
-
-```
-User Query
-    │
-    ▼
-┌─────────────────────────────────────┐
-│         Query Classifier            │
-│  "Does this need retrieval or       │
-│   parametric reasoning?"            │
-└──────────────┬──────────────────────┘
-               │
-       ┌───────┴───────┐
-       ▼               ▼
-  ┌─────────┐     ┌─────────┐
-  │  THEMIS │     │ HECTOR  │
-  │ (quick  │     │ (deep   │
-  │  Q&A)   │     │research)│
-  └─────────┘     └─────────┘
-```
-
-In v2.0, a unified router will dispatch queries to THEMIS for citizen-level Q&A and to HECTOR for deep legal research requiring source-level citations.
+- BNS 2023 abbreviation confusion — spell out "Bharatiya Nyaya Sanhita 2023" for best results
+- Section number hallucination on specific criminal law queries
+- No case law knowledge — statutes only
+- English only
+- State-specific laws not covered
+- Best used as orientation, not as authoritative legal reference
 
 ---
 
 ## Why This Exists
 
-India has 1.4 billion people. Fewer than 2 million are lawyers. The gap between legal literacy and legal need is enormous. THEMIS is a step toward making statutory law accessible to anyone with a terminal — not as a replacement for lawyers, but as a first layer of orientation that helps people understand what laws exist, what they say, and what options they have.
+India has 1.4 billion people. Fewer than 2 million are lawyers. The gap between legal literacy and legal need is enormous. THEMIS is a step toward making statutory law accessible to anyone — not as a replacement for lawyers, but as a first layer of orientation that helps people understand what laws exist, what they say, and what options they have.
+
+At 90,000 training pairs, a model can genuinely know Indian law. That is the goal.
+
+---
+
+## Relationship to HECTOR
+
+| | THEMIS | HECTOR |
+|---|---|---|
+| Architecture | Parametric fine-tune (LoRA) | RAG (Qdrant + Chain-of-Verification) |
+| Knowledge | Model weights | External vector database |
+| Runtime documents | Not needed | Required |
+| Best for | Citizen Q&A | Deep legal research |
+| Citations | Parametric (may hallucinate) | Source-grounded (verified) |
+| Status | v1 trained, v2 in progress | Production-ready |
 
 ---
 
 ## License
 
-MIT License — See [LICENSE](LICENSE) for details.
+MIT License
 
 ---
 
-## Acknowledgments
+## Citation
 
-- Base model: [Mistral 7B Instruct v0.3](https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.3) by Mistral AI
-- Fine-tuning framework: [Unsloth](https://github.com/unslothai/unsloth)
-- Legal data: [India Code](https://indiacode.nic.in) (public domain) · [Indian Kanoon](https://indiankanoon.org)
-- CLI: [Typer](https://typer.tiangolo.com) + [Rich](https://github.com/Textualize/rich)
+```bibtex
+@misc{themis2026,
+  author = {Daniel Deshmukh},
+  title = {THEMIS: Parametric Legal Intelligence Engine for Indian Law},
+  year = {2026},
+  publisher = {HuggingFace},
+  url = {https://huggingface.co/Daniel2503/themis-mistral-7b-lora}
+}
+```
 
 ---
 
-<div align="center">
-<i>THEMIS — Greek goddess of law, justice, and order.<br>
-Because justice should not require a law degree to understand.</i>
-</div>
+*THEMIS — Greek goddess of law, justice, and order.*
+*Because justice should not require a law degree to understand.*

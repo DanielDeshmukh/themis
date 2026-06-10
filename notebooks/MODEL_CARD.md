@@ -15,19 +15,34 @@ pipeline_tag: text-generation
 base_model: unsloth/mistral-7b-instruct-v0.3-bnb-4bit
 ---
 
-# THEMIS — Indian Legal Intelligence Engine
+# THEMIS v1 — Indian Legal Intelligence Engine (Proof of Pipeline)
 
 **The Parametric Legal Intelligence Engine for Indian Law**
 
-*"Not retrieval. Not lookup. Pure legal reasoning, baked into weights."*
+> **Status:** v1 trained | v2 in progress
+> **Honest assessment:** This adapter proves the fine-tuning pipeline works. It does NOT yet produce reliable legal knowledge. See [Limitations](#known-limitations-v1) below.
 
 ---
 
-## Model Description
+## What This Is
 
-THEMIS is a domain-specific language model fine-tuned on Indian statutory law. It answers legal questions about the Bharatiya Nyaya Sanhita (BNS) 2023, Bharatiya Nagarik Suraksha Sanhita (BNSS) 2023, Indian Penal Code (IPC) 1860, Consumer Protection Act 2019, and Right to Information Act 2005.
+A LoRA adapter fine-tuned on **1,939 Indian legal Q&A pairs** (BNS 2023, BNSS 2023, IPC, Consumer Protection Act, RTI Act). Must be loaded on top of `unsloth/mistral-7b-instruct-v0.3-bnb-4bit`.
 
-This is a **LoRA adapter** that must be loaded on top of the base model `unsloth/mistral-7b-instruct-v0.3-bnb-4bit`.
+## What This Demonstrates
+
+- End-to-end fine-tuning pipeline: data scraping → synthetic generation → LoRA training (Unsloth/Kaggle T4) → HuggingFace deployment
+- Instruction-following behavior in legal assistant style
+- Correctly trained disclaimer behavior
+- Partially learned response structure (citations, recommendations)
+
+## What This Does NOT Demonstrate
+
+- Accurate section number citation (~60% hallucination rate on BNS-specific queries)
+- BNS abbreviation recognition (model confuses "BNS" with unrelated expansions)
+- Deep statutory knowledge (1,939 pairs was insufficient for domain grounding)
+- IPC → BNS section mapping
+
+**Root cause:** Mistral 7B has near-zero BNS 2023 pretraining knowledge — BNS was enacted Dec 2023, at/after Mistral's training cutoff. The fine-tune taught style, not substance.
 
 ---
 
@@ -36,44 +51,17 @@ This is a **LoRA adapter** that must be loaded on top of the base model `unsloth
 | Parameter | Value |
 |-----------|-------|
 | Base Model | `unsloth/mistral-7b-instruct-v0.3-bnb-4bit` |
-| Method | LoRA (Low-Rank Adaptation) |
 | LoRA Rank | 8 |
 | LoRA Alpha | 16 |
 | Target Modules | `q_proj`, `v_proj` |
-| Dropout | 0.05 |
 | Epochs | 3 |
-| Batch Size | 2 |
-| Gradient Accumulation | 4 |
+| Batch Size | 1 |
+| Gradient Accumulation | 8 |
 | Learning Rate | 2e-4 |
-| LR Scheduler | Cosine |
-| Warmup Ratio | 0.03 |
 | Max Sequence Length | 512 |
-| Optimizer | AdamW |
-| FP16 | Yes (T4 compatible) |
-| Training Platform | Kaggle (free T4 GPU) |
-| Framework | Unsloth + HuggingFace PEFT |
-
----
-
-## Dataset
-
-**1,939 Alpaca-format instruction pairs** sourced from:
-
-| Source | Type | Volume |
-|--------|------|--------|
-| India Code (indiacode.nic.in) | BNS, BNSS, BSA, Consumer Protection Act, RTI Act | ~800 sections |
-| Indian Kanoon (indiankanoon.org) | Judgment summaries (criminal/civil/consumer) | ~500 judgments |
-| Synthetic (templates + Groq API) | Q&A pairs from parsed Bare Act sections | ~639 pairs |
-
-### Format
-
-```json
-{
-  "instruction": "What is the punishment for theft under BNS?",
-  "input": "",
-  "output": "Under Section 303 of the Bharatiya Nyaya Sanhita (BNS) 2023..."
-}
-```
+| Training Pairs | 1,939 |
+| Platform | Kaggle T4 (free) |
+| Framework | Unsloth + PEFT |
 
 ---
 
@@ -86,7 +74,6 @@ import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
 from peft import PeftModel
 
-# 4-bit quantization
 bnb_config = BitsAndBytesConfig(
     load_in_4bit=True,
     bnb_4bit_compute_dtype=torch.float16,
@@ -94,73 +81,57 @@ bnb_config = BitsAndBytesConfig(
     bnb_4bit_use_double_quant=True,
 )
 
-# Load base model
+tokenizer = AutoTokenizer.from_pretrained("unsloth/mistral-7b-instruct-v0.3-bnb-4bit")
 base_model = AutoModelForCausalLM.from_pretrained(
     "unsloth/mistral-7b-instruct-v0.3-bnb-4bit",
     quantization_config=bnb_config,
     device_map="auto",
 )
 
-# Load tokenizer
-tokenizer = AutoTokenizer.from_pretrained(
-    "unsloth/mistral-7b-instruct-v0.3-bnb-4bit"
-)
-
-# Attach LoRA adapter
 model = PeftModel.from_pretrained(base_model, "Daniel2503/themis-mistral-7b-lora")
 model.eval()
 
-# Format prompt (Alpaca style)
-question = "What is the punishment for theft under BNS?"
-prompt = f"### Instruction:\n{question}\n\n### Response:\n"
-
-# Generate
+# Use FULL ACT NAMES for best results (e.g., "Bharatiya Nyaya Sanhita" not "BNS")
+prompt = "### Instruction:\nWhat is the punishment for theft under the Bharatiya Nyaya Sanhita?\n\n### Response:\n"
 inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
+
 with torch.no_grad():
-    outputs = model.generate(
-        **inputs,
-        max_new_tokens=512,
-        temperature=0.3,
-        top_p=0.9,
-        repetition_penalty=1.1,
-        do_sample=True,
-    )
+    outputs = model.generate(**inputs, max_new_tokens=512, temperature=0.3)
 
 response = tokenizer.decode(outputs[0][inputs["input_ids"].shape[1]:], skip_special_tokens=True)
 print(response)
 ```
 
-### With THEMIS CLI
+---
 
-```bash
-pip install themis-law
-themis ask "What is BNS Section 118?"
-themis chat
-```
+## Known Limitations (v1)
+
+- **Section hallucination** — ~60% of BNS-specific queries contain fabricated section numbers
+- **Abbreviation confusion** — "BNS" not recognized; use full name "Bharatiya Nyaya Sanhita"
+- **Insufficient training data** — 1,939 pairs teaches style, not statutory content
+- **No case law** — statutes only, no judgments
+- **English only** — Hindi on roadmap
+- **State-specific laws not covered**
+
+### For Best Results
+
+- Use full act names: "Bharatiya Nyaya Sanhita" not "BNS"
+- Ask general legal questions, not specific section numbers
+- Treat output as orientation, never as authoritative legal reference
 
 ---
 
-## Example Outputs
+## v2 Roadmap
 
-**Q:** What is the punishment for theft under BNS?
+| Parameter | v1 (current) | v2 (next) |
+|-----------|-------------|-----------|
+| Training pairs | 1,939 | 10,000–15,000 |
+| LoRA rank | 8 | 16 |
+| Target modules | q_proj, v_proj | q,k,v,o proj |
+| Sequence length | 512 | 1,024 |
+| Expected citation accuracy | ~40% | >70% |
 
-**A:** Under Section 303 of the Bharatiya Nyaya Sanhita (BNS) 2023, whoever commits theft shall be punished with imprisonment of either description for a term which may extend to three years, or with fine which may extend to ten thousand rupees, or with both. This replaces Section 378 of the Indian Penal Code (IPC) 1860.
-
----
-
-## Intended Use
-
-- **Citizen legal orientation** — quick answers about Indian statutory law
-- **Legal literacy** — understanding what laws exist and what they say
-- **IPC to BNS mapping** — finding equivalent sections under the new code
-
-## Limitations
-
-- **Not a lawyer substitute.** Provides legal orientation, not legal advice.
-- **Not trained on case law.** Only covers statutes, not judgments.
-- **Not multilingual.** English only (Hindi on roadmap).
-- **Not accurate for state-specific laws.** Stamp duty, tenancy, land records vary by state.
-- **May hallucinate section numbers.** Always verify with a qualified advocate.
+**Success criteria:** Model correctly identifies BNS as Bharatiya Nyaya Sanhita and cites accurate section numbers on 70%+ of criminal law queries.
 
 ---
 
@@ -168,10 +139,10 @@ themis chat
 
 ```bibtex
 @misc{themis2026,
-  title={THEMIS: The Parametric Legal Intelligence Engine for Indian Law},
+  title={THEMIS: Parametric Legal Intelligence Engine for Indian Law},
   author={Daniel Deshmukh},
   year={2026},
-  howpublished={\\url{https://huggingface.co/Daniel2503/themis-mistral-7b-lora}},
+  howpublished={\url{https://huggingface.co/Daniel2503/themis-mistral-7b-lora}},
 }
 ```
 
@@ -183,5 +154,4 @@ MIT License
 
 ---
 
-*THEMIS — Greek goddess of law, justice, and order.*
-*Because justice should not require a law degree to understand.*
+*THEMIS v1 proves the pipeline works. v2 will make the model actually know Indian law.*

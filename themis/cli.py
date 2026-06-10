@@ -3,6 +3,9 @@
 Commands:
     themis ask "question"   - Single-shot legal Q&A
     themis chat             - Interactive multi-turn session
+    themis scrape           - Scrape legal data from India Code
+    themis generate         - Generate synthetic Q&A pairs
+    themis preprocess       - Merge and clean datasets
     themis eval             - Run the evaluation harness
     themis info             - Model metadata and training stats
     themis version          - Version info
@@ -180,6 +183,108 @@ def chat():
 
 
 @app.command()
+def scrape(
+    law: str = typer.Option(
+        "all",
+        "--law", "-l",
+        help="Law to scrape: all, bns, bnss, bsa, cpa, rti, ipc",
+    ),
+    delay: float = typer.Option(1.0, "--delay", "-d", help="Delay between requests (seconds)"),
+):
+    """Scrape legal data from India Code."""
+    from .data.scraper.indiacode import IndiaCodeScraper, scrape_target_laws
+
+    display_banner()
+    console.print("[bold yellow]Data Scraper[/bold yellow]\n")
+
+    LAW_MAP = {
+        "bns": "Bharatiya Nyaya Sanhita, 2023",
+        "bnss": "Bharatiya Nagarik Suraksha Sanhita, 2023",
+        "bsa": "Bharatiya Sakshya Adhiniyam, 2023",
+        "cpa": "Consumer Protection Act, 2019",
+        "rti": "Right to Information Act, 2005",
+        "ipc": "Indian Penal Code, 1860",
+    }
+
+    if law.lower() == "all":
+        console.print("[cyan]Scraping all target laws...[/cyan]\n")
+        scrape_target_laws()
+    elif law.lower() in LAW_MAP:
+        full_name = LAW_MAP[law.lower()]
+        console.print(f"[cyan]Scraping: {full_name}[/cyan]\n")
+        scraper = IndiaCodeScraper(delay=delay)
+        results = scraper.search_act(full_name)
+        if results:
+            best = results[0]
+            act = scraper.scrape_act(best["handle_id"], full_name)
+            scraper.save_act(act)
+            console.print(f"\n[green]Scraped {len(act.sections)} sections from {act.name}[/green]")
+        else:
+            console.print(f"[red]No results found for '{full_name}'[/red]")
+    else:
+        console.print(f"[red]Unknown law: {law}[/red]")
+        console.print(f"Available: {', '.join(LAW_MAP.keys())}, all")
+        raise typer.Exit(1)
+
+    console.print("\n[green]Scraping complete![/green]")
+
+
+@app.command()
+def generate(
+    api: bool = typer.Option(
+        True,
+        "--api/--no-api",
+        help="Use Groq API (free) or template fallback",
+    ),
+    v2: bool = typer.Option(
+        False,
+        "--v2",
+        help="Use v2 pipeline (3 Q&A per section + IPC mapping + abbreviations)",
+    ),
+    max_pairs: int = typer.Option(
+        None,
+        "--max", "-m",
+        help="Maximum Q&A pairs to generate",
+    ),
+):
+    """Generate synthetic Q&A pairs from scraped data."""
+    display_banner()
+    console.print("[bold yellow]Synthetic Data Generator[/bold yellow]\n")
+
+    if v2:
+        from .data.synthetic.generate_v2 import generate_v2_dataset
+        pairs = generate_v2_dataset(pairs_per_section=3)
+    else:
+        from .data.synthetic.generate import generate_training_data
+
+        if api:
+            import os
+            if not os.environ.get("GROQ_API_KEY"):
+                console.print("[yellow]GROQ_API_KEY not set. Using template fallback.[/yellow]")
+                api = False
+
+        pairs = generate_training_data(use_api=api)
+
+    if pairs:
+        console.print(f"\n[green]Generated {len(pairs)} Q&A pairs[/green]")
+    else:
+        console.print("[red]No pairs generated. Run 'themis scrape' first.[/red]")
+
+
+@app.command()
+def preprocess():
+    """Merge, clean, and deduplicate all datasets."""
+    from .data.preprocess import preprocess_pipeline
+
+    display_banner()
+    console.print("[bold yellow]Data Preprocessing[/bold yellow]\n")
+
+    preprocess_pipeline()
+
+    console.print("\n[green]Preprocessing complete![/green]")
+
+
+@app.command()
 def eval(
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Show detailed results"),
 ):
@@ -247,13 +352,17 @@ def info():
     table.add_column("Field", style="cyan")
     table.add_column("Value", style="white")
 
+    table.add_row("Status", "v1 trained | v2 in progress")
     table.add_row("Base Model", "unsloth/mistral-7b-instruct-v0.3-bnb-4bit")
-    table.add_row("LoRA Adapter", "Daniel2503/themis-mistral-7b-lora")
-    table.add_row("LoRA Config", "rank=8, alpha=16, targets=[q_proj, v_proj]")
-    table.add_row("Fine-tuning", "Unsloth + LoRA, 3 epochs")
-    table.add_row("Training Data", "1,939 Indian legal Q&A pairs")
+    table.add_row("LoRA Adapter (v1)", "Daniel2503/themis-mistral-7b-lora")
+    table.add_row("v1 LoRA Config", "rank=8, alpha=16, targets=[q_proj, v_proj]")
+    table.add_row("v2 LoRA Config", "rank=16, alpha=32, targets=[q,k,v,o proj]")
+    table.add_row("v1 Training Data", "1,939 Indian legal Q&A pairs")
+    table.add_row("v2 Target", "10,000\u201315,000 pairs")
     table.add_row("Domain", "BNS 2023 | BNSS 2023 | IPC | Consumer Law | RTI Act")
-    table.add_row("Quantization", "4-bit NF5 (bitsandbytes)")
+    table.add_row("Quantization", "4-bit NF4 (bitsandbytes)")
+    table.add_row("v1 Citation Accuracy", "~40% (hallucination rate ~60% on BNS queries)")
+    table.add_row("v2 Target Accuracy", ">70% on criminal law queries")
     table.add_row("License", "MIT")
 
     console.print(table)
