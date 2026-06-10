@@ -24,7 +24,7 @@ def push_to_hub(adapter_dir: str = None, repo_name: str = None):
     login(token=token)
 
     adapter_dir = adapter_dir or str(Path(__file__).parent.parent / "model" / "themis-lora")
-    repo_name = repo_name or "danieldeshmukh/themis-mistral-7b-lora"
+    repo_name = repo_name or "Daniel2503/themis-mistral-7b-lora"
 
     if not Path(adapter_dir).exists():
         print(f"Error: Adapter directory not found: {adapter_dir}")

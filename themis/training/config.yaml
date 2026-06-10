@@ -31,4 +31,4 @@ unsloth:
 
 output:
   adapter_dir: ./model/themis-lora
-  hub_repo: danieldeshmukh/themis-mistral-7b-lora
+  hub_repo: Daniel2503/themis-mistral-7b-lora
