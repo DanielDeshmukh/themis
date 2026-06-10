@@ -191,6 +191,7 @@ def scrape(
     ),
     delay: float = typer.Option(3.0, "--delay", "-d", help="Delay between requests (seconds)"),
     verbose: bool = typer.Option(True, "--verbose/--quiet", "-v/-q", help="Show section text snippets"),
+    force: bool = typer.Option(False, "--force", "-f", help="Re-scrape even if already scraped"),
 ):
     """Scrape legal data from India Code."""
     from .data.scraper.indiacode import IndiaCodeScraper, scrape_target_laws
@@ -209,11 +210,20 @@ def scrape(
 
     if law.lower() == "all":
         console.print("[cyan]Scraping all target laws...[/cyan]\n")
-        scrape_target_laws()
+        scrape_target_laws(force=force)
     elif law.lower() in LAW_MAP:
         full_name = LAW_MAP[law.lower()]
         console.print(f"[cyan]Scraping: {full_name}[/cyan]\n")
         scraper = IndiaCodeScraper(delay=delay, verbose=verbose)
+
+        # Check if already scraped
+        from .data.scraper.indiacode import _is_already_scraped
+        from .config import config
+        if _is_already_scraped(full_name, config.raw_dir) and not force:
+            console.print(f"[yellow]Already scraped: {full_name}[/yellow]")
+            console.print("[yellow]Use --force to re-scrape[/yellow]")
+            return
+
         results = scraper.search_act(full_name)
         if results:
             best = results[0]
@@ -245,17 +255,34 @@ def generate(
         "--v2",
         help="Use v2 pipeline (3 Q&A per section + IPC mapping + abbreviations)",
     ),
+    v3: bool = typer.Option(
+        False,
+        "--v3",
+        help="Use v3 pipeline (10+ Q&A per section + scenarios + Groq API LLM generation)",
+    ),
     max_pairs: int = typer.Option(
         None,
         "--max", "-m",
         help="Maximum Q&A pairs to generate",
+    ),
+    groq_limit: int = typer.Option(
+        10000,
+        "--groq-limit",
+        help="Max LLM pairs from Groq API (v3 only)",
     ),
 ):
     """Generate synthetic Q&A pairs from scraped data."""
     display_banner()
     console.print("[bold yellow]Synthetic Data Generator[/bold yellow]\n")
 
-    if v2:
+    if v3:
+        from .data.synthetic.generate_v3 import generate_v3_dataset
+        pairs = generate_v3_dataset(
+            pairs_per_section=10,
+            use_groq=api,
+            max_groq_pairs=groq_limit,
+        )
+    elif v2:
         from .data.synthetic.generate_v2 import generate_v2_dataset
         pairs = generate_v2_dataset(pairs_per_section=3)
     else:
