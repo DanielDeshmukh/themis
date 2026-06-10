@@ -31,7 +31,7 @@ class Config:
     device: str = "auto"
     load_in_4bit: bool = True
 
-    # Training
+    # Training (actual trained config — differs from inference; see training/config.yaml)
     lora_r: int = 8
     lora_alpha: int = 16
     lora_dropout: float = 0.05

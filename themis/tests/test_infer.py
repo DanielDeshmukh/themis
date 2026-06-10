@@ -2,8 +2,6 @@
 
 import sys
 from pathlib import Path
-from unittest.mock import MagicMock, patch
-
 import pytest
 
 # Add parent directory to path for imports
@@ -15,9 +13,9 @@ class TestConfig:
 
     def test_config_loads(self):
         from themis.config import config
-        assert config.base_model == "mistralai/Mistral-7B-Instruct-v0.3"
+        assert config.base_model == "unsloth/mistral-7b-instruct-v0.3-bnb-4bit"
         assert config.temperature == 0.3
-        assert config.max_new_tokens == 1024
+        assert config.max_new_tokens == 512
 
     def test_config_paths(self):
         from themis.config import config
@@ -38,13 +36,11 @@ class TestInference:
     def test_format_prompt(self):
         from themis.infer import ThemisInference
         engine = ThemisInference()
-        # Mock tokenizer
-        engine.tokenizer = MagicMock()
-        engine.tokenizer.apply_chat_template.return_value = "[INST] test [/INST]"
-        engine.tokenizer.eos_token = "</s>"
 
         prompt = engine.format_prompt("What is BNS Section 118?")
-        assert prompt is not None
+        assert "### Instruction:" in prompt
+        assert "What is BNS Section 118?" in prompt
+        assert "### Response:" in prompt
 
 
 class TestMetrics:
