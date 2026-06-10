@@ -89,11 +89,13 @@ themis/
 │   ├── synthetic/
 │   │   └── generate.py     # Groq/template Q&A pair generation
 │   ├── preprocess.py       # Cleaning, deduplication, formatting
-│   └── dataset.json        # Final Alpaca-format training dataset
+│   └── dataset.json        # Final Alpaca-format training dataset (1,939 pairs)
 ├── training/
 │   ├── finetune.py         # Unsloth + LoRA training script (Kaggle)
 │   ├── config.yaml         # LoRA rank, alpha, target modules, epochs
 │   └── push_to_hub.py      # HuggingFace Hub upload
+├── notebooks/
+│   └── themis_inference.ipynb  # Kaggle inference notebook
 ├── model/                  # Local model weights (gitignored)
 └── tests/
     └── test_infer.py       # Unit tests for inference pipeline
@@ -105,16 +107,15 @@ themis/
 
 | Layer | Technology | Purpose |
 |-------|-----------|---------|
-| Base Model | Mistral 7B Instruct v0.3 | Foundation — strong instruction following |
-| Fine-tuning Method | LoRA (Low-Rank Adaptation) | Parameter-efficient training on free compute |
+| Base Model | Mistral 7B Instruct v0.3 (4-bit) | Foundation — strong instruction following |
+| Fine-tuning Method | LoRA rank=8, alpha=16 | Parameter-efficient training on free compute |
 | Training Framework | Unsloth | 2x faster LoRA, fits in 16GB VRAM |
 | Training Platform | Kaggle (free T4 GPU) | Zero cost fine-tuning |
-| Dataset Format | Alpaca instruction tuning | Standard SFT format |
+| Dataset | 1,939 Alpaca-format Q&A pairs | BNS, BNSS, IPC, Consumer Law, RTI |
 | Data Sources | Indian Kanoon + India Code + Synthetic | Scraping + generation pipeline |
-| Synthetic Generation | Groq API (free) or Templates | Q&A pair generation from Bare Act sections |
 | CLI Framework | Typer + Rich | Beautiful terminal interface |
-| Inference | HuggingFace Transformers + PEFT | Load LoRA adapter on base model |
-| Evaluation | Custom harness + ROUGE-L | Citation accuracy + factual consistency |
+| Inference | Transformers + PEFT + BitsAndBytes | 4-bit quantized loading + LoRA |
+| Notebook | Kaggle T4 GPU | Interactive demo + evaluation |
 | Model Hosting | HuggingFace Hub | Free public model hosting |
 
 ---
@@ -129,61 +130,66 @@ THEMIS runs as a Rich-powered terminal application. No browser, no server, no AP
 pip install themis-law
 ```
 
+### Quick Start
+
+**Option A — Kaggle (recommended):** Run the [THEMIS Inference Notebook](https://www.kaggle.com/datasets/daniel2503/themis-inference) on a free T4 GPU. No local setup needed.
+
+**Option B — Local CLI:**
+```bash
+pip install themis-law
+themis ask "What is BNS Section 118?"
+themis chat
+```
+
+> **Note:** Requires a CUDA GPU for reasonable performance. The base model is ~4GB in 4-bit quantization.
+
 ### Commands
 
 | Command | Description |
 |---------|-------------|
 | `themis ask "your question"` | Single-shot legal Q&A |
 | `themis chat` | Interactive multi-turn session |
-| `themis eval` | Run the evaluation harness |
-| `themis info` | Model metadata and training stats |
-| `themis version` | Version and config |
 
 ### Terminal Experience
 
 ```
-╔══════════════════════════════════════════════════════════╗
-║  ⚖  THEMIS — Indian Legal Intelligence Engine  v1.0.0   ║
-║  Model: danieldeshmukh/themis-mistral-7b-lora            ║
-║  Domain: BNS 2023 · BNSS 2023 · IPC · Consumer Law      ║
-╚══════════════════════════════════════════════════════════╝
+████████╗██╗  ██╗███████╗███╗   ███╗██╗███████╗
+╚══██╔══╝██║  ██║██╔════╝████╗ ████║██║██╔════╝
+   ██║   ███████║█████╗  ██╔████╔██║██║███████╗
+   ██║   ██╔══██║██╔══╝  ██║╚██╔╝██║██║╚════██║
+   ██║   ██║  ██║███████╗██║ ╚═╝ ██║██║███████║
+   ╚═╝   ╚═╝  ╚═╝╚══════╝╚═╝     ╚═╝╚═╝╚══════╝
 
- Ask a legal question (or 'exit' to quit):
- ❯ If my employer hasn't paid salary for 2 months, what can I do?
+THEMIS v1.0.0  | Model: Daniel2503/themis-mistral-7b-lora
+Domain: BNS 2023 | BNSS 2023 | IPC | Consumer Law | RTI Act
 
- ⚖  THEMIS is thinking...  ━━━━━━━━━━━━━━━━━━━━━━  100%
+? Ask a legal question (or 'exit' to quit): If my employer hasn't paid salary for 2 months, what can I do?
 
-┌─────────────────────────────────────────────────────────┐
-│  LEGAL ORIENTATION                                      │
-├─────────────────────────────────────────────────────────┤
-│                                                         │
-│  Non-payment of wages is actionable under multiple      │
-│  statutes in India:                                     │
-│                                                         │
-│  [1] Payment of Wages Act, 1936 — Section 15            │
-│      File a complaint before the Authority appointed    │
-│      under this Act (typically a Labour Commissioner).  │
-│      Claim includes wages + compensation up to 10x.    │
-│                                                         │
-│  [2] BNS 2023 — Section 316 (Criminal Breach of Trust) │
-│      If deliberate withholding is proven, this may      │
-│      attract criminal liability on the employer.        │
-│                                                         │
-│  [3] Industrial Disputes Act, 1947 — Section 33C        │
-│      Workmen can recover dues directly through the      │
-│      Labour Court without filing a civil suit.         │
-│                                                         │
-│  ⚠  Recommended Step: File Form I before the           │
-│     Payment of Wages Authority in your district.        │
-│                                                         │
-├─────────────────────────────────────────────────────────┤
-│  ⚠  DISCLAIMER: This is legal orientation, not legal   │
-│  advice. Consult a qualified advocate for your          │
-│  specific situation.                                    │
-└─────────────────────────────────────────────────────────┘
+Loading model...
+THEMIS is thinking...
 
- Cited: Payment of Wages Act §15 · BNS §316 · IDA §33C
- Confidence: High  |  Scope: Labour Law
+LEGAL ORIENTATION
+============================================================
+
+Non-payment of wages is actionable under multiple statutes in India:
+
+[1] Payment of Wages Act, 1936 — Section 15
+    File a complaint before the Authority appointed
+    under this Act (typically a Labour Commissioner).
+    Claim includes wages + compensation up to 10x.
+
+[2] BNS 2023 — Section 316 (Criminal Breach of Trust)
+    If deliberate withholding is proven, this may
+    attract criminal liability on the employer.
+
+[3] Industrial Disputes Act, 1947 — Section 33C
+    Workmen can recover dues directly through the
+    Labour Court without filing a civil suit.
+
+DISCLAIMER: This is legal orientation, not legal advice.
+Consult a qualified advocate for your specific situation.
+
+Tokens: 24 in / 187 out | Device: cuda
 ```
 
 ---
@@ -197,7 +203,7 @@ pip install themis-law
 | India Code (indiacode.nic.in) | BNS, BNSS, BSA, Consumer Protection Act, RTI Act — full text | ~800 sections parsed |
 | Indian Kanoon (indiankanoon.org) | Selected judgment summaries across criminal/civil/consumer domains | ~500 judgments |
 | Synthetic (Groq/template) | Q&A pairs generated from parsed Bare Act sections | ~1,500 pairs |
-| **Total** | | **~2,800 instruction pairs** |
+| **Total** | | **~1,939 instruction pairs** |
 
 ### Format
 
@@ -217,17 +223,15 @@ All training data follows the Alpaca instruction tuning format:
 
 ```yaml
 # config.yaml
-base_model: mistralai/Mistral-7B-Instruct-v0.3
+base_model: unsloth/mistral-7b-instruct-v0.3-bnb-4bit
 method: lora
 
 lora:
-  r: 16                          # LoRA rank
-  lora_alpha: 32                 # Scaling factor
-  target_modules:                # Attention layers only
+  r: 8                            # LoRA rank
+  lora_alpha: 16                  # Scaling factor
+  target_modules:                 # Attention layers only
     - q_proj
-    - k_proj
     - v_proj
-    - o_proj
   lora_dropout: 0.05
   bias: none
   task_type: CAUSAL_LM
@@ -239,7 +243,7 @@ training:
   learning_rate: 2e-4
   warmup_ratio: 0.03
   lr_scheduler: cosine
-  max_seq_length: 2048
+  max_seq_length: 512
   fp16: true                     # T4 compatible
 
 unsloth:

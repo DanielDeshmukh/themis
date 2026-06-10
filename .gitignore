@@ -1,13 +1,5 @@
 # THEMIS model weights (gitignored)
-model/*.bin
-model/*.safetensors
-model/*.pt
-model/*.pth
-model/adapter_model*
-model/adapter_config*
-model/tokenizer*
-model/special_tokens*
-model/README*
+themis/model/
 
 # Python
 __pycache__/

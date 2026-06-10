@@ -43,28 +43,34 @@ class ThemisInference:
         print(f"Loading base model: {base_model_id}")
         print(f"Device: {self.device}")
 
-        # 4-bit quantization config
-        bnb_config = BitsAndBytesConfig(
-            load_in_4bit=True,
-            bnb_4bit_compute_dtype=torch.float16,
-            bnb_4bit_quant_type="nf4",
-            bnb_4bit_use_double_quant=True,
-        )
+        # 4-bit quantization only available on CUDA
+        bnb_config = None
+        if self.device == "cuda":
+            bnb_config = BitsAndBytesConfig(
+                load_in_4bit=True,
+                bnb_4bit_compute_dtype=torch.float16,
+                bnb_4bit_quant_type="nf4",
+                bnb_4bit_use_double_quant=True,
+            )
 
         # Load tokenizer
         self.tokenizer = AutoTokenizer.from_pretrained(base_model_id)
         if self.tokenizer.pad_token is None:
             self.tokenizer.pad_token = self.tokenizer.eos_token
 
-        # Load base model in 4-bit
-        self.model = AutoModelForCausalLM.from_pretrained(
-            base_model_id,
-            quantization_config=bnb_config,
-            device_map="auto",
-            torch_dtype=torch.float16,
-            cache_dir=str(config.model_cache_dir),
-            trust_remote_code=True,
-        )
+        # Load base model
+        model_kwargs = {
+            "cache_dir": str(config.model_cache_dir),
+            "trust_remote_code": True,
+        }
+        if bnb_config:
+            model_kwargs["quantization_config"] = bnb_config
+            model_kwargs["device_map"] = "auto"
+            model_kwargs["dtype"] = torch.float16
+        else:
+            model_kwargs["dtype"] = torch.float32
+
+        self.model = AutoModelForCausalLM.from_pretrained(base_model_id, **model_kwargs)
 
         # Attach LoRA adapter — downloads from HuggingFace Hub on first run
         print(f"Loading LoRA adapter: {lora_adapter_id}")
