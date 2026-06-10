@@ -65,4 +65,4 @@ target-version = "py311"
 select = ["E", "F", "W", "I"]
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+testpaths = ["themis/tests"]
