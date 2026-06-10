@@ -338,21 +338,62 @@ class IndiaCodeScraper:
         return filepath
 
 
-def scrape_target_laws():
+def _law_to_filename(law_name: str) -> str:
+    """Convert law name to JSON filename."""
+    safe = re.sub(r"[^\w\s-]", "", law_name.lower())
+    safe = re.sub(r"\s+", "_", safe.strip())
+    return f"{safe}.json"
+
+
+def _is_already_scraped(law_name: str, raw_dir: Path) -> bool:
+    """Check if a law has already been scraped.
+
+    Handles filename mismatches (e.g., 'the_' prefix from website titles).
+    """
+    expected = _law_to_filename(law_name)
+
+    # Exact match
+    if (raw_dir / expected).exists():
+        return True
+
+    # Match with 'the_' prefix (website titles include "The")
+    the_filename = "the_" + expected
+    if (raw_dir / the_filename).exists():
+        return True
+
+    # Partial match: check if any file contains key words from the law name
+    words = [w for w in law_name.lower().replace(",", "").split() if len(w) > 3]
+    for f in raw_dir.glob("*.json"):
+        if all(w in f.name for w in words):
+            return True
+
+    return False
+
+
+def scrape_target_laws(force: bool = False):
     """Scrape all target laws for THEMIS training.
 
     Resilient: if one law fails (server error, timeout, etc.),
     it logs the error and continues to the next law.
+    Skips laws already scraped unless force=True.
     """
     scraper = IndiaCodeScraper(delay=3.0, verbose=True)
 
     succeeded = []
+    skipped = []
     failed = []
 
     for law_name in config.target_laws:
         _print(f"\n{'='*60}")
         _print(f"Searching for: {law_name}")
         _print("=" * 60)
+
+        # Check if already scraped
+        if _is_already_scraped(law_name, config.raw_dir):
+            _print(f"  Already scraped: {law_name}")
+            _print(f"  Use --force to re-scrape")
+            skipped.append(law_name)
+            continue
 
         try:
             results = scraper.search_act(law_name)
@@ -385,9 +426,14 @@ def scrape_target_laws():
     _print(f"\n{'='*60}")
     _print("SCRAPING SUMMARY")
     _print("=" * 60)
-    _print(f"Succeeded: {len(succeeded)}/{len(config.target_laws)}")
-    for name, count in succeeded:
-        _print(f"  OK  {name}: {count} sections")
+    if succeeded:
+        _print(f"Scraped: {len(succeeded)}")
+        for name, count in succeeded:
+            _print(f"  OK  {name}: {count} sections")
+    if skipped:
+        _print(f"Skipped (already scraped): {len(skipped)}")
+        for name in skipped:
+            _print(f"  --  {name}")
     if failed:
         _print(f"Failed: {len(failed)}")
         for name, reason in failed:
