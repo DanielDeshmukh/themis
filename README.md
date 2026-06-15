@@ -16,14 +16,16 @@
 <p>
   <img src="https://img.shields.io/badge/model-Mistral%207B%20LoRA-blueviolet" />
   <img src="https://img.shields.io/badge/domain-Indian%20Law%20%7C%20BNS%20%7C%20IPC-crimson" />
-  <img src="https://img.shields.io/badge/status-v1%20trained%20%7C%20v2%20in%20progress-orange" />
+  <img src="https://img.shields.io/badge/status-v1%20trained%20%7C%20v2%20overfitting%20%7C%20v3%202-epoch%20fix-blue" />
   <img src="https://img.shields.io/badge/python-3.11+-brightgreen" />
   <img src="https://img.shields.io/badge/license-MIT-lightgrey" />
 </p>
 
 *"Not retrieval. Not lookup. Pure legal reasoning, baked into weights."*
 
-**HuggingFace:** [`Daniel2503/themis-mistral-7b-lora`](https://huggingface.co/Daniel2503/themis-mistral-7b-lora)
+**HuggingFace:** 
+- v1: [`Daniel2503/themis-mistral-7b-lora`](https://huggingface.co/Daniel2503/themis-mistral-7b-lora)
+- v3: [`Daniel2503/themis-mistral-7b-lora-v3`](https://huggingface.co/Daniel2503/themis-mistral-7b-lora-v3)
 
 </div>
 
@@ -37,36 +39,24 @@ Where HECTOR retrieves — THEMIS reasons.
 
 ---
 
-## Current State — v1 (Honest Assessment)
+## Current State — v2 Results (Overfitting Fixed in v3)
 
-> This section exists because honest evaluation is more valuable than a polished demo.
+> **v2 post-mortem:** Scaled to 20,909 training pairs, but 3 epochs caused overfitting. Loss dropped to 0.06-0.08 (memorization territory). Model regurgitated training artifacts instead of reasoning. Fixed in v3 by reducing to 2 epochs.
 
-**What v1 demonstrates:**
-- ✅ End-to-end fine-tuning pipeline working on Kaggle free T4 GPU
-- ✅ LoRA adapter trained and published to HuggingFace Hub
-- ✅ Alpaca instruction format learned — model responds in legal assistant style
-- ✅ Disclaimer behavior trained correctly
-- ✅ Response structure (citations, recommendations, disclaimers) partially learned
+**What v2 achieved:**
+- ✅ Domain grounding fixed — no more "Bangladesh National Standards" hallucination
+- ✅ Correct section identification (e.g., Section 303 for theft)
+- ✅ 10x data scale from v1 (1,939 → 20,909 pairs)
 
-**What v1 does NOT do well:**
-- ❌ BNS 2023 abbreviation recognition — model confuses "BNS" with unrelated expansions
-- ❌ Accurate section number citation — hallucinates section numbers on specific queries
-- ❌ Deep statutory knowledge retention — 1,939 pairs was insufficient for domain grounding
-- ❌ IPC → BNS mapping — transition knowledge not retained at this data scale
+**What v2 broke:**
+- ❌ Overfitting — loss 0.06-0.08 indicates memorization, not learning
+- ❌ Regurgitation — model recited definitions verbatim instead of answering the question
+- ❌ Repetition loops — disclaimer text repeated 2x, cut off at token limit
+- ❌ No checkpoint saving — intermediate checkpoints lost when Kaggle session ended
 
-**Root cause analysis:**
+**Root cause:** 3 epochs on 20k examples is too many. The model memorized surface patterns (statute text blocks, disclaimer boilerplate) rather than learning to reason about what's being asked.
 
-Mistral 7B Instruct v0.3 has near-zero BNS 2023 knowledge in its pretraining data — BNS was enacted in December 2023, at or after Mistral's training cutoff. This means there is no foundation for the LoRA to build on. The fine-tune taught the model *how to respond like a lawyer* but not *what Indian law says*.
-
-The technical constraints that caused this:
-
-| Parameter | v1 Value | Minimum Needed | v2 Target |
-|-----------|----------|----------------|-----------|
-| LoRA rank | 8 | 16 | 32 |
-| Sequence length | 512 tokens | 1,024 tokens | 2,048 tokens |
-| Training pairs | 1,939 | 10,000+ | 50,000–90,000 |
-| Target modules | q_proj, v_proj | q,k,v,o proj | q,k,v,o + MLP |
-| Epochs | 3 | 3–5 | 3–5 |
+**v3 fix:** Reduced epochs from 3 to 2. See `notebooks/THEMIS_v3_Training.ipynb`.
 
 ---
 
@@ -96,18 +86,15 @@ At this scale, THEMIS becomes a model that has genuinely read Indian law — not
 
 ## What Happens Next — Roadmap
 
-### v2 — Knowledge Foundation (In Progress)
+### v2 → v3 — Overfitting Fix (Completed)
 
-**Target:** 10,000–15,000 pairs | LoRA rank 16 | Sequence 1,024 | T4 x2
+**What changed:**
+- ✅ Reduced epochs from 3 to 2 (fixes memorization)
+- ✅ Added checkpoint saving every 500 steps (keep last 3)
+- ✅ Added conversational test questions to eval set (15 new rephrased queries)
+- ✅ Detailed training notebook with step-by-step instructions
 
-- [ ] Expand dataset to 15,000 pairs (BNS + IPC + BNSS full coverage)
-- [ ] Retrain with rank 16, all 4 attention modules (q,k,v,o)
-- [ ] Sequence length 1,024 for longer statutory text
-- [ ] Add BNS abbreviation disambiguation pairs explicitly
-- [ ] Evaluate on 100-question held-out set with citation accuracy metric
-- [ ] Publish v2 adapter to HuggingFace
-
-**Success criteria:** Model correctly identifies BNS as Bharatiya Nyaya Sanhita and cites accurate section numbers on 70%+ of criminal law queries.
+**v3 notebook:** `notebooks/THEMIS_v3_Training.ipynb`
 
 ---
 
@@ -205,7 +192,7 @@ themis/
 
 ## Dataset Construction
 
-### v1 Dataset (Current — 1,939 pairs)
+### v1 Dataset (Completed — 1,939 pairs)
 
 Generated from India Code Bare Acts using Claude API for synthetic Q&A pair generation. Format:
 
@@ -217,11 +204,15 @@ Generated from India Code Bare Acts using Claude API for synthetic Q&A pair gene
 }
 ```
 
-### v2 Dataset Plan (10,000–15,000 pairs)
+### v2/v3 Dataset (Completed — 20,909 pairs)
 
-Expanding sources to cover full BNS, IPC, BNSS, BSA statutory text with explicit abbreviation disambiguation pairs.
+Expanded to 10x data covering BNS, IPC, BNSS, BSA, CPA, RTI Act. Includes:
+- 15 template question categories
+- IPC → BNS section mappings (200+)
+- Abbreviation disambiguation pairs (21)
+- Conversational rephrased questions (added for v3 eval)
 
-### v3 Dataset Plan (50,000–90,000 pairs)
+### v4 Dataset Plan (50,000–90,000 pairs)
 
 Full India Code corpus + Indian Kanoon judgment summaries + complete IPC→BNS transition mapping. At this scale, the dataset size matches the clinical corpus depth of production medical AI systems.
 
@@ -246,17 +237,27 @@ platform: Kaggle T4 (free)
 training_pairs: 1,939
 ```
 
-### v2 (Planned)
+### v2 → v3 (Overfitting Fix)
 
 ```yaml
+# v2 used 3 epochs → overfitting (loss 0.06-0.08)
+# v3 fixed by reducing to 2 epochs
 lora_r: 16
+lora_alpha: 32
 target_modules: [q_proj, k_proj, v_proj, o_proj]
+lora_dropout: 0.05
+epochs: 2                    # KEY CHANGE: 2 instead of 3
+batch_size: 1
+gradient_accumulation: 8
+learning_rate: 2e-4
 max_seq_length: 1024
-training_pairs: 15,000
-platform: Kaggle T4 x2
+save_steps: 500              # Checkpoint every 500 steps
+save_total_limit: 3          # Keep last 3 checkpoints
+platform: Kaggle T4 (free)
+training_pairs: 20,909
 ```
 
-### v3 (Planned)
+### v4 (Planned — Production)
 
 ```yaml
 lora_r: 32
@@ -287,10 +288,14 @@ Target: >95% correct refusal on state-specific law queries.
 
 ---
 
-## Known Limitations (v1)
+## Known Limitations
 
-- BNS 2023 abbreviation confusion — spell out "Bharatiya Nyaya Sanhita 2023" for best results
-- Section number hallucination on specific criminal law queries
+### v2 (Fixed in v3)
+- ~~BNS 2023 abbreviation confusion~~ — Fixed with 20k training pairs
+- ~~Section number hallucination~~ — Model now identifies correct sections
+
+### v3 (Current)
+- Overfitting risk still exists — monitor loss during training
 - No case law knowledge — statutes only
 - English only
 - State-specific laws not covered
@@ -315,7 +320,7 @@ At 90,000 training pairs, a model can genuinely know Indian law. That is the goa
 | Runtime documents | Not needed | Required |
 | Best for | Citizen Q&A | Deep legal research |
 | Citations | Parametric (may hallucinate) | Source-grounded (verified) |
-| Status | v1 trained, v2 in progress | Production-ready |
+| Status | v1 trained, v3 in progress | Production-ready |
 
 ---
 
