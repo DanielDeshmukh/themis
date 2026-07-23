@@ -3,12 +3,12 @@
 <div align="center">
 
 ```
-████████╗██╗  ██╗███████╗███╗   ███╗██╗███████╗
-╚══██╔══╝██║  ██║██╔════╝████╗ ████║██║██╔════╝
-   ██║   ███████║█████╗  ██╔████╔██║██║███████╗
-   ██║   ██╔══██║██╔══╝  ██║╚██╔╝██║██║╚════██║
-   ██║   ██║  ██║███████╗██║ ╚═╝ ██║██║███████║
-   ╚═╝   ╚═╝  ╚═╝╚══════╝╚═╝     ╚═╝╚═╝╚══════╝
+ ████████╗██╗  ██╗███████╗███╗   ███╗██╗███████╗
+ ╚══██╔══╝██║  ██║██╔════╝████╗ ████║██║██╔════╝
+    ██║   ███████║█████╗  ██╔████╔██║██║███████╗
+    ██║   ██╔══██║██╔══╝  ██║╚██╔╝██║██║╚════██║
+    ██║   ██║  ██║███████╗██║ ╚═╝ ██║██║███████║
+    ╚═╝   ╚═╝  ╚═╝╚══════╝╚═╝     ╚═╝╚═╝╚══════╝
 ```
 
 **The Parametric Legal Intelligence Engine for Indian Law**
@@ -118,25 +118,26 @@ Diagnosed persistent overfitting (train loss 0.13, val loss 0.98). Implemented r
 The long-term architecture unifies THEMIS (parametric reasoning) with HECTOR (retrieval grounding):
 
 ```
-User Query
-    |
-    v
-+-------------------------------------+
-|         Query Classifier            |
-|  "Parametric or retrieval?"         |
-+--------------+----------------------+
-               |
-       +-------+-------+
-       v               v
-  +---------+     +---------+
-  |  THEMIS |     | HECTOR  |
-  | (reason)|     |(retrieve|
-  |         |     |+ verify)|
-  +----+----+     +----+----+
-       +-------+-------+
-               v
-      Unified Legal Response
-      with citations + reasoning
+                                                     User Query
+                                                          |
+                                                          v
+                                           +-------------------------------+
+                                           |         Query Classifier      |
+                                           |  "Parametric or retrieval?"   |
+                                           +--------------+----------------+
+                                                          | 
+                                                          |
+                                                  +-------+-------+
+                                                  v               v
+                                             +---------+     +---------+
+                                             |  THEMIS |     | HECTOR  |
+                                             | (reason)|     |(retrieve|
+                                             |         |     |+ verify)|
+                                             +----+----+     +----+----+
+                                                  +-------+-------+
+                                                          v
+                                               Unified Legal Response
+                                               with citations + reasoning
 ```
 
 THEMIS handles citizen-level Q&A with parametric reasoning. HECTOR handles deep legal research requiring source-level PDF citations. A unified router dispatches based on query complexity.
