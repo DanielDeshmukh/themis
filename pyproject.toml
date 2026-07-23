@@ -1,6 +1,6 @@
 [project]
 name = "themis-llm"
-version = "2.0.1"
+version = "2.0.2"
 description = "THEMIS — Retrieval-grounded LLM for Indian statutory law (BNS, BNSS, BSA, IPC, RTI)"
 readme = "README.md"
 license = {text = "MIT"}
