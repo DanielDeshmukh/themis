@@ -144,6 +144,61 @@ THEMIS handles citizen-level Q&A with parametric reasoning. HECTOR handles deep 
 
 ---
 
+## CLI Usage
+
+### Install
+
+```bash
+pip install themis-llm[cli]
+```
+
+### Single-Shot Q&A
+
+```bash
+themis ask "What does Section 302 of the BNS say about murder?"
+```
+
+### Interactive Chat
+
+```bash
+themis chat
+```
+
+Then type questions interactively. Type `exit` or `quit` to leave.
+
+### Other Commands
+
+```bash
+# View model info
+themis info
+
+# View version
+themis version
+
+# Run evaluation harness
+themis eval
+
+# Preprocess datasets
+themis preprocess
+
+# Scrape legal data (advanced)
+themis scrape --law bns
+themis scrape --law bnss
+themis scrape --law cpa
+
+# Generate synthetic Q&A pairs (advanced)
+themis generate --no-api
+```
+
+### CLI Help
+
+```bash
+themis --help
+themis ask --help
+```
+
+---
+
 ## Architecture
 
 ```

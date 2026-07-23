@@ -1,17 +1,18 @@
 [project]
-name = "themis-law"
-version = "1.0.0"
-description = "The Parametric Legal Intelligence Engine for Indian Law"
+name = "themis-llm"
+version = "2.0.1"
+description = "THEMIS — Retrieval-grounded LLM for Indian statutory law (BNS, BNSS, BSA, IPC, RTI)"
 readme = "README.md"
 license = {text = "MIT"}
 requires-python = ">=3.11"
 authors = [
     {name = "Daniel Deshmukh", email = "deshmukhdaniel2005@gmail.com"},
 ]
-keywords = ["indian-law", "legal-ai", "bns", "ipc", "bnss", "fine-tuning", "lora"]
+keywords = ["indian-law", "legal-ai", "bns", "ipc", "bnss", "fine-tuning", "lora", "retrieval-augmented"]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
+    "Intended Audience :: Legal Industry",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -22,14 +23,13 @@ dependencies = [
     "peft>=0.6.0",
     "bitsandbytes>=0.41.0",
     "torch>=2.0.0",
-    "typer>=0.9.0",
-    "rich>=13.0.0",
-    "requests>=2.31.0",
-    "beautifulsoup4>=4.12.0",
-    "pyyaml>=6.0",
 ]
 
 [project.optional-dependencies]
+cli = [
+    "typer[all]>=0.9.0",
+    "rich>=13.0.0",
+]
 training = [
     "unsloth",
     "rouge-score",
@@ -39,9 +39,6 @@ training = [
 scraper = [
     "pymupdf>=1.23.0",
 ]
-synthetic = [
-    "groq>=0.4.0",
-]
 dev = [
     "pytest>=7.0.0",
     "ruff>=0.1.0",
@@ -49,6 +46,10 @@ dev = [
 
 [project.scripts]
 themis = "themis.cli:app"
+
+[project.urls]
+Homepage = "https://github.com/DanielDeshmukh/themis"
+Repository = "https://github.com/DanielDeshmukh/themis"
 
 [build-system]
 requires = ["setuptools>=68.0", "wheel"]
