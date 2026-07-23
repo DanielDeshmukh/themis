@@ -86,56 +86,55 @@ At this scale, THEMIS becomes a model that has genuinely read Indian law — not
 
 ## What Happens Next — Roadmap
 
+### v1 → v2 — Scale (Completed)
+
+Expanded training data from 1,939 to 20,909 pairs. Fixed BNS abbreviation hallucination. Achieved correct section identification for core criminal law queries. Introduced 15 template question categories and IPC-to-BNS section mappings.
+
 ### v2 → v3 — Overfitting Fix (Completed)
 
-**What changed:**
-- ✅ Reduced epochs from 3 to 2 (fixes memorization)
-- ✅ Added checkpoint saving every 500 steps (keep last 3)
-- ✅ Added conversational test questions to eval set (15 new rephrased queries)
-- ✅ Detailed training notebook with step-by-step instructions
+Reduced training from 3 epochs to 2. Added checkpoint saving every 500 steps (keep last 3). Expanded eval set with 15 conversational rephrased queries. Loss stabilized; model stopped regurgitating training artifacts.
 
-**v3 notebook:** `notebooks/THEMIS_v3_Training.ipynb`
+### v3 → v4 — Data Expansion (Completed)
 
----
+Scaled to 52,170 training examples across BNS, BNSS, BSA, IPC, RTI, and the Constitution. Added GSMS-B QA and IndicLegalQA datasets. Introduced scenario-based and multi-hop reasoning templates. Achieved 1,549 training steps on Kaggle T4.
 
-### v3 — Production Grade (Planned)
+### v4 → v5 — Retrieval Grounding (Completed)
 
-**Target:** 50,000–90,000 pairs | LoRA rank 32 | Sequence 2,048 | A100 (Colab Pro or RunPod)
+Diagnosed persistent overfitting (train loss 0.13, val loss 0.98). Implemented retrieval-grounding engine: extracts section references from user questions, looks up anchor tables, and injects section text as context before generation. Added SectionIndex, SectionRef, and grounded prompt building. Published SDK (`themis-llm` v2.0.1) with `ThemisModel.ask()` and CLI (`themis ask/chat/info`). Added 19-pass test suite. Cleaned repository: removed 19 stale files, rewrote git history to remove hardcoded tokens, deleted all tracked data artifacts.
 
-- [ ] Full India Code corpus ingestion (all central acts)
-- [ ] Indian Kanoon top 1,000 judgment summaries
-- [ ] IPC → BNS complete transition mapping (all 511 sections)
-- [ ] Hindi language support (bilingual fine-tune)
-- [ ] RAGAS-style evaluation harness with citation F1 scoring
-- [ ] Systematic hallucination rate measurement
-- [ ] Publish v3 adapter to HuggingFace with full model card
+### v5 → v6 — Production Hardening (Planned)
+
+- Consumer Protection Act 2019 training data (anchor table exists; QA pairs pending)
+- Indian Kanoon top 1,000 judgment summaries
+- Hindi language support (bilingual fine-tune)
+- RAGAS-style evaluation harness with citation F1 scoring
+- Systematic hallucination rate measurement across all acts
+- Publish v6 adapter to HuggingFace with full model card
 
 **Success criteria:** Citation accuracy >85% on held-out eval set. Hallucination rate <10% on factual section number queries.
 
----
-
-### v4 — THEMIS-HECTOR Hybrid (Vision)
+### v6 → v7 — THEMIS-HECTOR Hybrid (Vision)
 
 The long-term architecture unifies THEMIS (parametric reasoning) with HECTOR (retrieval grounding):
 
 ```
 User Query
-    │
-    ▼
-┌─────────────────────────────────────┐
-│         Query Classifier            │
-│  "Parametric or retrieval?"         │
-└──────────────┬──────────────────────┘
-               │
-       ┌───────┴───────┐
-       ▼               ▼
-  ┌─────────┐     ┌─────────┐
-  │  THEMIS │     │ HECTOR  │
-  │ (reason)│     │(retrieve│
-  │         │     │+ verify)│
-  └────┬────┘     └────┬────┘
-       └───────┬───────┘
-               ▼
+    |
+    v
++-------------------------------------+
+|         Query Classifier            |
+|  "Parametric or retrieval?"         |
++--------------+----------------------+
+               |
+       +-------+-------+
+       v               v
+  +---------+     +---------+
+  |  THEMIS |     | HECTOR  |
+  | (reason)|     |(retrieve|
+  |         |     |+ verify)|
+  +----+----+     +----+----+
+       +-------+-------+
+               v
       Unified Legal Response
       with citations + reasoning
 ```
