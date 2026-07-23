@@ -60,6 +60,7 @@ def rouge_l(predicted: str, ground_truth: str) -> float:
     """Compute ROUGE-L score between predicted and ground truth."""
     try:
         from rouge_score import rouge_scorer
+
         scorer = rouge_scorer.RougeScorer(["rougeL"], use_stemmer=True)
         scores = scorer.score(ground_truth, predicted)
         return scores["rougeL"].fmeasure

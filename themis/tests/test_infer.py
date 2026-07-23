@@ -14,12 +14,14 @@ class TestConfig:
 
     def test_config_loads(self):
         from themis.config import config
+
         assert config.base_model == "unsloth/mistral-7b-instruct-v0.3-bnb-4bit"
         assert config.temperature == 0.3
         assert config.max_new_tokens == 512
 
     def test_config_paths(self):
         from themis.config import config
+
         assert config.project_root.exists()
         assert config.data_dir.name == "data"
         assert config.model_dir.name == "model"
@@ -30,12 +32,14 @@ class TestInference:
 
     def test_device_resolution(self):
         from themis.infer import ThemisInference
+
         engine = ThemisInference()
         device = engine._resolve_device()
         assert device in ("cuda", "mps", "cpu")
 
     def test_format_prompt(self):
         from themis.infer import ThemisInference
+
         engine = ThemisInference()
 
         prompt = engine.format_prompt("What is BNS Section 118?")
@@ -49,6 +53,7 @@ class TestMetrics:
 
     def test_citation_accuracy_perfect(self):
         from themis.eval.metrics import citation_accuracy
+
         predicted = "Section 118 of BNS states..."
         ground_truth = "Section 118 of BNS states..."
         score = citation_accuracy(predicted, ground_truth)
@@ -56,6 +61,7 @@ class TestMetrics:
 
     def test_citation_accuracy_partial(self):
         from themis.eval.metrics import citation_accuracy
+
         predicted = "Section 118 of BNS and Section 302 IPC"
         ground_truth = "Section 118 of BNS"
         score = citation_accuracy(predicted, ground_truth)
@@ -63,6 +69,7 @@ class TestMetrics:
 
     def test_citation_accuracy_none(self):
         from themis.eval.metrics import citation_accuracy
+
         predicted = "This is a general answer."
         ground_truth = "Section 118 of BNS"
         score = citation_accuracy(predicted, ground_truth)
@@ -70,12 +77,14 @@ class TestMetrics:
 
     def test_rouge_l_identical(self):
         from themis.eval.metrics import rouge_l
+
         text = "Section 118 of BNS states the punishment."
         score = rouge_l(text, text)
         assert score == 1.0
 
     def test_extract_section_citations(self):
         from themis.eval.metrics import extract_section_citations
+
         text = "Section 118 of BNS and Section 302 IPC apply here."
         citations = extract_section_citations(text)
         assert "118" in citations
@@ -86,12 +95,14 @@ class TestPreprocess:
 
     def test_clean_text(self):
         from themis.data.preprocess import clean_text
+
         text = "  Hello   World  "
         cleaned = clean_text(text)
         assert cleaned == "Hello World"
 
     def test_clean_text_html(self):
         from themis.data.preprocess import clean_text
+
         text = "<p>Hello</p> <b>World</b>"
         cleaned = clean_text(text)
         assert "<p>" not in cleaned
@@ -99,6 +110,7 @@ class TestPreprocess:
 
     def test_validate_section_valid(self):
         from themis.data.preprocess import validate_section
+
         section = {
             "section_number": "118",
             "title": "Punishment for causing hurt",
@@ -108,6 +120,7 @@ class TestPreprocess:
 
     def test_validate_section_invalid(self):
         from themis.data.preprocess import validate_section
+
         section = {
             "section_number": "",
             "title": "Title",

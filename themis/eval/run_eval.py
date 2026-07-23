@@ -32,20 +32,23 @@ def run_eval(verbose: bool = False):
     results = []
     try:
         from ..infer import get_inference, load_model
+
         load_model()
         inference = get_inference()
 
         for i, item in enumerate(eval_set):
             question = item.get("instruction", "")
-            print(f"Q{i+1}/{len(eval_set)}: {question[:60]}...")
+            print(f"Q{i + 1}/{len(eval_set)}: {question[:60]}...")
 
             try:
                 result = inference.generate(question)
-                results.append({
-                    "question": question,
-                    "expected": item.get("output", ""),
-                    "predicted": result.response,
-                })
+                results.append(
+                    {
+                        "question": question,
+                        "expected": item.get("output", ""),
+                        "predicted": result.response,
+                    }
+                )
                 if verbose:
                     print(f"  A: {result.response[:80]}...\n")
             except Exception as e:

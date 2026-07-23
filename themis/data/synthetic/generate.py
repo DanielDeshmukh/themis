@@ -113,7 +113,10 @@ def categorize_section(title: str, text: str) -> str:
         return "definition"
     elif any(kw in combined for kw in ["right", "entitled", "may claim", "shall be entitled"]):
         return "right"
-    elif any(kw in combined for kw in ["offence", "crime", "stolen", "fraud", "cheating", "murder", "theft"]):
+    elif any(
+        kw in combined
+        for kw in ["offence", "crime", "stolen", "fraud", "cheating", "murder", "theft"]
+    ):
         return "offence"
     elif any(kw in combined for kw in ["procedure", "file", "complaint", "application", "form"]):
         return "procedure"
@@ -165,6 +168,7 @@ def generate_question_template(section: dict) -> QAPair:
 # Groq API generator (free, fast)
 # =============================================================================
 
+
 class GroqGenerator:
     """Generate synthetic Q&A pairs using Groq API (free tier)."""
 
@@ -200,9 +204,7 @@ class GroqGenerator:
         }
 
         try:
-            resp = requests.post(
-                self.BASE_URL, headers=self.headers, json=payload, timeout=60
-            )
+            resp = requests.post(self.BASE_URL, headers=self.headers, json=payload, timeout=60)
             resp.raise_for_status()
             data = resp.json()
 
@@ -220,7 +222,9 @@ class GroqGenerator:
                 source_act=section.get("act_name", ""),
             )
         except Exception as e:
-            print(f"  Warning: Groq generation failed for section {section.get('section_number')}: {e}")
+            print(
+                f"  Warning: Groq generation failed for section {section.get('section_number')}: {e}"
+            )
         return None
 
     def generate_from_sections(self, sections: list[dict], max_pairs: int = None) -> list[QAPair]:
@@ -247,6 +251,7 @@ class GroqGenerator:
 # =============================================================================
 # Main generation pipeline
 # =============================================================================
+
 
 def load_sections_from_raw(raw_dir: Path) -> list[dict]:
     """Load all sections from raw scraped data."""
@@ -335,5 +340,6 @@ def generate_training_data(raw_dir: Path = None, output_dir: Path = None, use_ap
 
 if __name__ == "__main__":
     import sys
+
     use_api = "--no-api" not in sys.argv
     generate_training_data(use_api=use_api)

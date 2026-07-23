@@ -22,65 +22,242 @@ from ...config import config
 # =============================================================================
 
 IPC_BNS_MAPPING = {
-    "34": "Section 9", "101": "Section 103", "102": "Section 104", "103": "Section 103",
-    "105": "Section 105", "106": "Section 106", "109": "Section 108", "111": "Section 110",
-    "114": "Section 113", "120A": "Section 110", "120B": "Section 110", "141": "Section 142",
-    "143": "Section 139", "144": "Section 140", "145": "Section 141", "146": "Section 143",
-    "147": "Section 143", "148": "Section 144", "149": "Section 145", "160": "Section 146",
-    "224": "Section 232", "225": "Section 233", "299": "Section 100", "300": "Section 101",
-    "302": "Section 101", "303": "Section 105", "304": "Section 105", "304A": "Section 106",
-    "305": "Section 106", "306": "Section 108", "307": "Section 109", "308": "Section 110",
-    "309": "Section 47", "311": "Section 114", "312": "Section 117", "313": "Section 117",
-    "314": "Section 117", "315": "Section 117", "316": "Section 117", "317": "Section 117",
-    "318": "Section 117", "319": "Section 117", "320": "Section 118", "321": "Section 118",
-    "322": "Section 118", "323": "Section 121", "324": "Section 122", "325": "Section 123",
-    "326": "Section 124", "327": "Section 125", "328": "Section 126", "329": "Section 127",
-    "330": "Section 128", "331": "Section 129", "332": "Section 130", "333": "Section 131",
-    "334": "Section 132", "335": "Section 133", "336": "Section 134", "337": "Section 135",
-    "338": "Section 136", "341": "Section 164", "342": "Section 165", "343": "Section 166",
-    "344": "Section 167", "345": "Section 168", "346": "Section 169", "347": "Section 170",
-    "348": "Section 171", "352": "Section 352", "354": "Section 74", "355": "Section 355",
-    "356": "Section 356", "357": "Section 357", "358": "Section 358", "359": "Section 363",
-    "360": "Section 364", "361": "Section 365", "362": "Section 366", "363A": "Section 367",
-    "364": "Section 368", "365": "Section 369", "366": "Section 370", "366A": "Section 370",
-    "366B": "Section 370", "367": "Section 371", "368": "Section 372", "369": "Section 373",
-    "370": "Section 370", "371": "Section 371", "372": "Section 372", "373": "Section 373",
-    "374": "Section 374", "375": "Section 63", "376": "Section 64", "376A": "Section 64",
-    "376B": "Section 64", "376C": "Section 64", "376D": "Section 64", "377": "Section 77",
-    "378": "Section 303", "379": "Section 304", "380": "Section 305", "383": "Section 308",
-    "384": "Section 309", "385": "Section 310", "386": "Section 311", "387": "Section 312",
-    "388": "Section 313", "389": "Section 314", "390": "Section 315", "391": "Section 316",
-    "392": "Section 317", "393": "Section 318", "394": "Section 319", "395": "Section 320",
-    "396": "Section 321", "397": "Section 322", "398": "Section 323", "399": "Section 324",
-    "400": "Section 325", "401": "Section 326", "402": "Section 327", "403": "Section 328",
-    "404": "Section 329", "405": "Section 316", "406": "Section 317", "407": "Section 318",
-    "408": "Section 319", "409": "Section 320", "411": "Section 330", "412": "Section 331",
-    "413": "Section 332", "414": "Section 333", "415": "Section 138", "416": "Section 139",
-    "417": "Section 140", "418": "Section 141", "419": "Section 142", "420": "Section 143",
-    "421": "Section 148", "422": "Section 149", "423": "Section 150", "424": "Section 151",
-    "425": "Section 148", "426": "Section 149", "427": "Section 150", "428": "Section 151",
-    "429": "Section 152", "430": "Section 153", "431": "Section 154", "432": "Section 155",
-    "433": "Section 156", "434": "Section 157", "435": "Section 158", "436": "Section 159",
-    "437": "Section 160", "438": "Section 161", "439": "Section 162", "440": "Section 163",
-    "441": "Section 164", "442": "Section 165", "443": "Section 166", "444": "Section 167",
-    "445": "Section 168", "446": "Section 169", "447": "Section 170", "448": "Section 171",
-    "449": "Section 172", "450": "Section 173", "451": "Section 174", "452": "Section 175",
-    "453": "Section 176", "454": "Section 177", "455": "Section 178", "456": "Section 179",
-    "457": "Section 180", "458": "Section 181", "459": "Section 182", "460": "Section 183",
-    "461": "Section 184", "462": "Section 185", "463": "Section 186", "464": "Section 187",
-    "465": "Section 188", "466": "Section 189", "467": "Section 190", "468": "Section 191",
-    "469": "Section 192", "470": "Section 193", "471": "Section 194", "472": "Section 195",
-    "473": "Section 196", "474": "Section 197", "475": "Section 198", "476": "Section 199",
-    "477": "Section 200", "477A": "Section 200", "478": "Section 201", "479": "Section 202",
-    "480": "Section 203", "481": "Section 204", "482": "Section 205", "483": "Section 206",
-    "484": "Section 207", "485": "Section 208", "486": "Section 209", "487": "Section 210",
-    "488": "Section 211", "489": "Section 212", "489A": "Section 212", "489B": "Section 213",
-    "489C": "Section 214", "489D": "Section 215", "489E": "Section 216", "490": "Section 217",
-    "491": "Section 218", "492": "Section 219", "493": "Section 220", "494": "Section 221",
-    "495": "Section 222", "496": "Section 223", "498": "Section 85", "498A": "Section 85",
-    "500": "Section 356", "501": "Section 357", "502": "Section 358", "503": "Section 351",
-    "504": "Section 352", "505": "Section 353", "506": "Section 351", "507": "Section 352",
-    "508": "Section 354", "509": "Section 354", "510": "Section 355", "511": "Section 61",
+    "34": "Section 9",
+    "101": "Section 103",
+    "102": "Section 104",
+    "103": "Section 103",
+    "105": "Section 105",
+    "106": "Section 106",
+    "109": "Section 108",
+    "111": "Section 110",
+    "114": "Section 113",
+    "120A": "Section 110",
+    "120B": "Section 110",
+    "141": "Section 142",
+    "143": "Section 139",
+    "144": "Section 140",
+    "145": "Section 141",
+    "146": "Section 143",
+    "147": "Section 143",
+    "148": "Section 144",
+    "149": "Section 145",
+    "160": "Section 146",
+    "224": "Section 232",
+    "225": "Section 233",
+    "299": "Section 100",
+    "300": "Section 101",
+    "302": "Section 101",
+    "303": "Section 105",
+    "304": "Section 105",
+    "304A": "Section 106",
+    "305": "Section 106",
+    "306": "Section 108",
+    "307": "Section 109",
+    "308": "Section 110",
+    "309": "Section 47",
+    "311": "Section 114",
+    "312": "Section 117",
+    "313": "Section 117",
+    "314": "Section 117",
+    "315": "Section 117",
+    "316": "Section 117",
+    "317": "Section 117",
+    "318": "Section 117",
+    "319": "Section 117",
+    "320": "Section 118",
+    "321": "Section 118",
+    "322": "Section 118",
+    "323": "Section 121",
+    "324": "Section 122",
+    "325": "Section 123",
+    "326": "Section 124",
+    "327": "Section 125",
+    "328": "Section 126",
+    "329": "Section 127",
+    "330": "Section 128",
+    "331": "Section 129",
+    "332": "Section 130",
+    "333": "Section 131",
+    "334": "Section 132",
+    "335": "Section 133",
+    "336": "Section 134",
+    "337": "Section 135",
+    "338": "Section 136",
+    "341": "Section 164",
+    "342": "Section 165",
+    "343": "Section 166",
+    "344": "Section 167",
+    "345": "Section 168",
+    "346": "Section 169",
+    "347": "Section 170",
+    "348": "Section 171",
+    "352": "Section 352",
+    "354": "Section 74",
+    "355": "Section 355",
+    "356": "Section 356",
+    "357": "Section 357",
+    "358": "Section 358",
+    "359": "Section 363",
+    "360": "Section 364",
+    "361": "Section 365",
+    "362": "Section 366",
+    "363A": "Section 367",
+    "364": "Section 368",
+    "365": "Section 369",
+    "366": "Section 370",
+    "366A": "Section 370",
+    "366B": "Section 370",
+    "367": "Section 371",
+    "368": "Section 372",
+    "369": "Section 373",
+    "370": "Section 370",
+    "371": "Section 371",
+    "372": "Section 372",
+    "373": "Section 373",
+    "374": "Section 374",
+    "375": "Section 63",
+    "376": "Section 64",
+    "376A": "Section 64",
+    "376B": "Section 64",
+    "376C": "Section 64",
+    "376D": "Section 64",
+    "377": "Section 77",
+    "378": "Section 303",
+    "379": "Section 304",
+    "380": "Section 305",
+    "383": "Section 308",
+    "384": "Section 309",
+    "385": "Section 310",
+    "386": "Section 311",
+    "387": "Section 312",
+    "388": "Section 313",
+    "389": "Section 314",
+    "390": "Section 315",
+    "391": "Section 316",
+    "392": "Section 317",
+    "393": "Section 318",
+    "394": "Section 319",
+    "395": "Section 320",
+    "396": "Section 321",
+    "397": "Section 322",
+    "398": "Section 323",
+    "399": "Section 324",
+    "400": "Section 325",
+    "401": "Section 326",
+    "402": "Section 327",
+    "403": "Section 328",
+    "404": "Section 329",
+    "405": "Section 316",
+    "406": "Section 317",
+    "407": "Section 318",
+    "408": "Section 319",
+    "409": "Section 320",
+    "411": "Section 330",
+    "412": "Section 331",
+    "413": "Section 332",
+    "414": "Section 333",
+    "415": "Section 138",
+    "416": "Section 139",
+    "417": "Section 140",
+    "418": "Section 141",
+    "419": "Section 142",
+    "420": "Section 143",
+    "421": "Section 148",
+    "422": "Section 149",
+    "423": "Section 150",
+    "424": "Section 151",
+    "425": "Section 148",
+    "426": "Section 149",
+    "427": "Section 150",
+    "428": "Section 151",
+    "429": "Section 152",
+    "430": "Section 153",
+    "431": "Section 154",
+    "432": "Section 155",
+    "433": "Section 156",
+    "434": "Section 157",
+    "435": "Section 158",
+    "436": "Section 159",
+    "437": "Section 160",
+    "438": "Section 161",
+    "439": "Section 162",
+    "440": "Section 163",
+    "441": "Section 164",
+    "442": "Section 165",
+    "443": "Section 166",
+    "444": "Section 167",
+    "445": "Section 168",
+    "446": "Section 169",
+    "447": "Section 170",
+    "448": "Section 171",
+    "449": "Section 172",
+    "450": "Section 173",
+    "451": "Section 174",
+    "452": "Section 175",
+    "453": "Section 176",
+    "454": "Section 177",
+    "455": "Section 178",
+    "456": "Section 179",
+    "457": "Section 180",
+    "458": "Section 181",
+    "459": "Section 182",
+    "460": "Section 183",
+    "461": "Section 184",
+    "462": "Section 185",
+    "463": "Section 186",
+    "464": "Section 187",
+    "465": "Section 188",
+    "466": "Section 189",
+    "467": "Section 190",
+    "468": "Section 191",
+    "469": "Section 192",
+    "470": "Section 193",
+    "471": "Section 194",
+    "472": "Section 195",
+    "473": "Section 196",
+    "474": "Section 197",
+    "475": "Section 198",
+    "476": "Section 199",
+    "477": "Section 200",
+    "477A": "Section 200",
+    "478": "Section 201",
+    "479": "Section 202",
+    "480": "Section 203",
+    "481": "Section 204",
+    "482": "Section 205",
+    "483": "Section 206",
+    "484": "Section 207",
+    "485": "Section 208",
+    "486": "Section 209",
+    "487": "Section 210",
+    "488": "Section 211",
+    "489": "Section 212",
+    "489A": "Section 212",
+    "489B": "Section 213",
+    "489C": "Section 214",
+    "489D": "Section 215",
+    "489E": "Section 216",
+    "490": "Section 217",
+    "491": "Section 218",
+    "492": "Section 219",
+    "493": "Section 220",
+    "494": "Section 221",
+    "495": "Section 222",
+    "496": "Section 223",
+    "498": "Section 85",
+    "498A": "Section 85",
+    "500": "Section 356",
+    "501": "Section 357",
+    "502": "Section 358",
+    "503": "Section 351",
+    "504": "Section 352",
+    "505": "Section 353",
+    "506": "Section 351",
+    "507": "Section 352",
+    "508": "Section 354",
+    "509": "Section 354",
+    "510": "Section 355",
+    "511": "Section 61",
 }
 
 # =============================================================================
@@ -88,26 +265,106 @@ IPC_BNS_MAPPING = {
 # =============================================================================
 
 ABBREVIATION_PAIRS = [
-    {"instruction": "What does BNS stand for in Indian law?", "input": "", "output": "BNS stands for the Bharatiya Nyaya Sanhita, 2023. It is India's new criminal code replacing the Indian Penal Code (IPC) 1860. Enacted December 25, 2023, effective July 1, 2024, it contains 358 sections.\n\nDISCLAIMER: This is legal orientation, not legal advice. Consult a qualified advocate for your specific situation."},
-    {"instruction": "What does BNSS stand for in Indian law?", "input": "", "output": "BNSS stands for the Bharatiya Nagarik Suraksha Sanhita, 2023. It is India's new criminal procedure code replacing CrPC 1973. Effective July 1, 2024, it contains 531 sections governing investigation, inquiry, and trial.\n\nDISCLAIMER: This is legal orientation, not legal advice. Consult a qualified advocate for your specific situation."},
-    {"instruction": "What does BSA stand for in Indian law?", "input": "", "output": "BSA stands for the Bharatiya Sakshya Adhiniyam, 2023. It replaces the Indian Evidence Act 1872. Effective July 1, 2024, it contains 170 sections on evidence admissibility and examination.\n\nDISCLAIMER: This is legal orientation, not legal advice. Consult a qualified advocate for your specific situation."},
-    {"instruction": "What is the difference between IPC and BNS?", "input": "", "output": "IPC (1860) had 511 sections; BNS (2023) has 358. BNS adds organized crime and terrorism offences, increases minimum punishments, and includes community service as punishment.\n\nDISCLAIMER: This is legal orientation, not legal advice. Consult a qualified advocate for your specific situation."},
-    {"instruction": "What is the difference between CrPC and BNSS?", "input": "", "output": "CrPC (1973) was replaced by BNSS (2023). BNSS mandates forensic investigation for crimes with 7+ years punishment, allows electronic evidence, reduces trial timelines, and introduces plea bargaining.\n\nDISCLAIMER: This is legal orientation, not legal advice. Consult a qualified advocate for your specific situation."},
-    {"instruction": "What is the difference between Evidence Act and BSA?", "input": "", "output": "The Evidence Act (1872) was replaced by BSA (2023). BSA recognizes electronic records as primary evidence, allows accused statements under certain conditions, and modernizes expert testimony provisions.\n\nDISCLAIMER: This is legal orientation, not legal advice. Consult a qualified advocate for your specific situation."},
-    {"instruction": "What does RTI stand for?", "input": "", "output": "RTI stands for Right to Information Act, 2005. It grants citizens the right to request information from public authorities within 30 days. Public Information Officers (PIOs) handle requests.\n\nDISCLAIMER: This is legal orientation, not legal advice. Consult a qualified advocate for your specific situation."},
-    {"instruction": "What does CPA stand for?", "input": "", "output": "CPA stands for Consumer Protection Act, 2019. It provides three-tier dispute redressal: District Commission, State Commission, and National Commission. Covers all goods and services including e-commerce.\n\nDISCLAIMER: This is legal orientation, not legal advice. Consult a qualified advocate for your specific situation."},
-    {"instruction": "What is the difference between BNS and BNSS?", "input": "", "output": "BNS defines substantive criminal law (what is an offence and its punishment). BNSS defines criminal procedure (how offences are investigated and tried). BNS: 'murder is punishable by death.' BNSS: 'how a murder case is tried.'\n\nDISCLAIMER: This is legal orientation, not legal advice. Consult a qualified advocate for your specific situation."},
-    {"instruction": "What is the difference between BNS and BSA?", "input": "", "output": "BNS defines offences and punishments. BSA defines evidence law — what is admissible and how to prove facts in court. BNS: 'theft is a crime.' BSA: 'how you prove theft happened.'\n\nDISCLAIMER: This is legal orientation, not legal advice. Consult a qualified advocate for your specific situation."},
-    {"instruction": "What is FIR in Indian law?", "input": "", "output": "FIR stands for First Information Report. Under Section 173 BNSS (formerly Section 154 CrPC), it is the first report to police about a cognizable offence. Any person can file it; police must register it.\n\nDISCLAIMER: This is legal orientation, not legal advice. Consult a qualified advocate for your specific situation."},
-    {"instruction": "What is a Cognizable Offence under BNSS?", "input": "", "output": "A cognizable offence allows police to arrest without warrant and investigate without Magistrate's permission. Under BNSS, these are offences punishable with 3+ years or listed in the First Schedule.\n\nDISCLAIMER: This is legal orientation, not legal advice. Consult a qualified advocate for your specific situation."},
-    {"instruction": "What is a Non-Cognizable Offence under BNSS?", "input": "", "output": "A non-cognizable offence requires police to get a warrant for arrest and Magistrate's permission for investigation. Not listed in the First Schedule. Complainant must approach Magistrate directly.\n\nDISCLAIMER: This is legal orientation, not legal advice. Consult a qualified advocate for your specific situation."},
-    {"instruction": "What is Anticipatory Bail under BNSS?", "input": "", "output": "Anticipatory bail under Section 482 BNSS (formerly Section 438 CrPC) allows a person to seek bail in advance if they apprehend arrest. Applied to Sessions Court or High Court.\n\nDISCLAIMER: This is legal orientation, not legal advice. Consult a qualified advocate for your specific situation."},
-    {"instruction": "What is a Charge Sheet under BNSS?", "input": "", "output": "A charge sheet (now 'police report') is filed under Section 193 BNSS after investigation. Contains offence details, evidence, and accused names. Magistrate takes cognizance based on it.\n\nDISCLAIMER: This is legal orientation, not legal advice. Consult a qualified advocate for your specific situation."},
-    {"instruction": "What is Summary Trial under BNSS?", "input": "", "output": "Summary trial under BNSS applies to offences punishable with 2 years or less. Faster procedure: Magistrate records brief evidence outline, trial completes in 1-2 hearings.\n\nDISCLAIMER: This is legal orientation, not legal advice. Consult a qualified advocate for your specific situation."},
-    {"instruction": "What is a Bailable Offence under BNSS?", "input": "", "output": "A bailable offence gives the accused a right to bail. Generally offences punishable with 3 years or less. Police or Magistrate must release on bail if conditions are met.\n\nDISCLAIMER: This is legal orientation, not legal advice. Consult a qualified advocate for your specific situation."},
-    {"instruction": "What is a Non-Bailable Offence under BNSS?", "input": "", "output": "A non-bailable offence means bail is discretionary, not a right. Serious offences like murder, rape, dacoity. Accused must apply to court; granted based on offence seriousness and flight risk.\n\nDISCLAIMER: This is legal orientation, not legal advice. Consult a qualified advocate for your specific situation."},
-    {"instruction": "What is a Compoundable Offence under BNS?", "input": "", "output": "A compoundable offence can be settled amicably between victim and accused, dropping the case. Includes minor assault, defamation, certain property offences. Murder and rape are non-compoundable.\n\nDISCLAIMER: This is legal orientation, not legal advice. Consult a qualified advocate for your specific situation."},
-    {"instruction": "What does Cognizance mean under BNSS?", "input": "", "output": "Taking cognizance means the Magistrate formally acknowledges an offence and proceeds. Can be on charge sheet from police, complaint from victim, or information from any person.\n\nDISCLAIMER: This is legal orientation, not legal advice. Consult a qualified advocate for your specific situation."},
+    {
+        "instruction": "What does BNS stand for in Indian law?",
+        "input": "",
+        "output": "BNS stands for the Bharatiya Nyaya Sanhita, 2023. It is India's new criminal code replacing the Indian Penal Code (IPC) 1860. Enacted December 25, 2023, effective July 1, 2024, it contains 358 sections.\n\nDISCLAIMER: This is legal orientation, not legal advice. Consult a qualified advocate for your specific situation.",
+    },
+    {
+        "instruction": "What does BNSS stand for in Indian law?",
+        "input": "",
+        "output": "BNSS stands for the Bharatiya Nagarik Suraksha Sanhita, 2023. It is India's new criminal procedure code replacing CrPC 1973. Effective July 1, 2024, it contains 531 sections governing investigation, inquiry, and trial.\n\nDISCLAIMER: This is legal orientation, not legal advice. Consult a qualified advocate for your specific situation.",
+    },
+    {
+        "instruction": "What does BSA stand for in Indian law?",
+        "input": "",
+        "output": "BSA stands for the Bharatiya Sakshya Adhiniyam, 2023. It replaces the Indian Evidence Act 1872. Effective July 1, 2024, it contains 170 sections on evidence admissibility and examination.\n\nDISCLAIMER: This is legal orientation, not legal advice. Consult a qualified advocate for your specific situation.",
+    },
+    {
+        "instruction": "What is the difference between IPC and BNS?",
+        "input": "",
+        "output": "IPC (1860) had 511 sections; BNS (2023) has 358. BNS adds organized crime and terrorism offences, increases minimum punishments, and includes community service as punishment.\n\nDISCLAIMER: This is legal orientation, not legal advice. Consult a qualified advocate for your specific situation.",
+    },
+    {
+        "instruction": "What is the difference between CrPC and BNSS?",
+        "input": "",
+        "output": "CrPC (1973) was replaced by BNSS (2023). BNSS mandates forensic investigation for crimes with 7+ years punishment, allows electronic evidence, reduces trial timelines, and introduces plea bargaining.\n\nDISCLAIMER: This is legal orientation, not legal advice. Consult a qualified advocate for your specific situation.",
+    },
+    {
+        "instruction": "What is the difference between Evidence Act and BSA?",
+        "input": "",
+        "output": "The Evidence Act (1872) was replaced by BSA (2023). BSA recognizes electronic records as primary evidence, allows accused statements under certain conditions, and modernizes expert testimony provisions.\n\nDISCLAIMER: This is legal orientation, not legal advice. Consult a qualified advocate for your specific situation.",
+    },
+    {
+        "instruction": "What does RTI stand for?",
+        "input": "",
+        "output": "RTI stands for Right to Information Act, 2005. It grants citizens the right to request information from public authorities within 30 days. Public Information Officers (PIOs) handle requests.\n\nDISCLAIMER: This is legal orientation, not legal advice. Consult a qualified advocate for your specific situation.",
+    },
+    {
+        "instruction": "What does CPA stand for?",
+        "input": "",
+        "output": "CPA stands for Consumer Protection Act, 2019. It provides three-tier dispute redressal: District Commission, State Commission, and National Commission. Covers all goods and services including e-commerce.\n\nDISCLAIMER: This is legal orientation, not legal advice. Consult a qualified advocate for your specific situation.",
+    },
+    {
+        "instruction": "What is the difference between BNS and BNSS?",
+        "input": "",
+        "output": "BNS defines substantive criminal law (what is an offence and its punishment). BNSS defines criminal procedure (how offences are investigated and tried). BNS: 'murder is punishable by death.' BNSS: 'how a murder case is tried.'\n\nDISCLAIMER: This is legal orientation, not legal advice. Consult a qualified advocate for your specific situation.",
+    },
+    {
+        "instruction": "What is the difference between BNS and BSA?",
+        "input": "",
+        "output": "BNS defines offences and punishments. BSA defines evidence law — what is admissible and how to prove facts in court. BNS: 'theft is a crime.' BSA: 'how you prove theft happened.'\n\nDISCLAIMER: This is legal orientation, not legal advice. Consult a qualified advocate for your specific situation.",
+    },
+    {
+        "instruction": "What is FIR in Indian law?",
+        "input": "",
+        "output": "FIR stands for First Information Report. Under Section 173 BNSS (formerly Section 154 CrPC), it is the first report to police about a cognizable offence. Any person can file it; police must register it.\n\nDISCLAIMER: This is legal orientation, not legal advice. Consult a qualified advocate for your specific situation.",
+    },
+    {
+        "instruction": "What is a Cognizable Offence under BNSS?",
+        "input": "",
+        "output": "A cognizable offence allows police to arrest without warrant and investigate without Magistrate's permission. Under BNSS, these are offences punishable with 3+ years or listed in the First Schedule.\n\nDISCLAIMER: This is legal orientation, not legal advice. Consult a qualified advocate for your specific situation.",
+    },
+    {
+        "instruction": "What is a Non-Cognizable Offence under BNSS?",
+        "input": "",
+        "output": "A non-cognizable offence requires police to get a warrant for arrest and Magistrate's permission for investigation. Not listed in the First Schedule. Complainant must approach Magistrate directly.\n\nDISCLAIMER: This is legal orientation, not legal advice. Consult a qualified advocate for your specific situation.",
+    },
+    {
+        "instruction": "What is Anticipatory Bail under BNSS?",
+        "input": "",
+        "output": "Anticipatory bail under Section 482 BNSS (formerly Section 438 CrPC) allows a person to seek bail in advance if they apprehend arrest. Applied to Sessions Court or High Court.\n\nDISCLAIMER: This is legal orientation, not legal advice. Consult a qualified advocate for your specific situation.",
+    },
+    {
+        "instruction": "What is a Charge Sheet under BNSS?",
+        "input": "",
+        "output": "A charge sheet (now 'police report') is filed under Section 193 BNSS after investigation. Contains offence details, evidence, and accused names. Magistrate takes cognizance based on it.\n\nDISCLAIMER: This is legal orientation, not legal advice. Consult a qualified advocate for your specific situation.",
+    },
+    {
+        "instruction": "What is Summary Trial under BNSS?",
+        "input": "",
+        "output": "Summary trial under BNSS applies to offences punishable with 2 years or less. Faster procedure: Magistrate records brief evidence outline, trial completes in 1-2 hearings.\n\nDISCLAIMER: This is legal orientation, not legal advice. Consult a qualified advocate for your specific situation.",
+    },
+    {
+        "instruction": "What is a Bailable Offence under BNSS?",
+        "input": "",
+        "output": "A bailable offence gives the accused a right to bail. Generally offences punishable with 3 years or less. Police or Magistrate must release on bail if conditions are met.\n\nDISCLAIMER: This is legal orientation, not legal advice. Consult a qualified advocate for your specific situation.",
+    },
+    {
+        "instruction": "What is a Non-Bailable Offence under BNSS?",
+        "input": "",
+        "output": "A non-bailable offence means bail is discretionary, not a right. Serious offences like murder, rape, dacoity. Accused must apply to court; granted based on offence seriousness and flight risk.\n\nDISCLAIMER: This is legal orientation, not legal advice. Consult a qualified advocate for your specific situation.",
+    },
+    {
+        "instruction": "What is a Compoundable Offence under BNS?",
+        "input": "",
+        "output": "A compoundable offence can be settled amicably between victim and accused, dropping the case. Includes minor assault, defamation, certain property offences. Murder and rape are non-compoundable.\n\nDISCLAIMER: This is legal orientation, not legal advice. Consult a qualified advocate for your specific situation.",
+    },
+    {
+        "instruction": "What does Cognizance mean under BNSS?",
+        "input": "",
+        "output": "Taking cognizance means the Magistrate formally acknowledges an offence and proceeds. Can be on charge sheet from police, complaint from victim, or information from any person.\n\nDISCLAIMER: This is legal orientation, not legal advice. Consult a qualified advocate for your specific situation.",
+    },
 ]
 
 # =============================================================================
@@ -227,6 +484,7 @@ QUESTION_TEMPLATES = {
 # Categorization
 # =============================================================================
 
+
 def categorize_section(title: str, text: str) -> str:
     """Categorize a section based on its title and content."""
     combined = (title + " " + text).lower()
@@ -237,7 +495,10 @@ def categorize_section(title: str, text: str) -> str:
         return "definition"
     elif any(kw in combined for kw in ["right", "entitled", "may claim", "shall be entitled"]):
         return "right"
-    elif any(kw in combined for kw in ["offence", "crime", "stolen", "fraud", "cheating", "murder", "theft"]):
+    elif any(
+        kw in combined
+        for kw in ["offence", "crime", "stolen", "fraud", "cheating", "murder", "theft"]
+    ):
         return "offence"
     elif any(kw in combined for kw in ["procedure", "file", "complaint", "application", "form"]):
         return "procedure"
@@ -257,6 +518,7 @@ def categorize_section(title: str, text: str) -> str:
 # =============================================================================
 # Pair generation
 # =============================================================================
+
 
 def generate_multi_qa_per_section(section: dict, pairs_per_section: int = 10) -> list[dict]:
     """Generate multiple Q&A pairs per section using varied templates."""
@@ -302,11 +564,13 @@ def generate_multi_qa_per_section(section: dict, pairs_per_section: int = 10) ->
             f"Consult a qualified advocate for your specific situation."
         )
 
-        pairs.append({
-            "instruction": instruction,
-            "input": "",
-            "output": output,
-        })
+        pairs.append(
+            {
+                "instruction": instruction,
+                "input": "",
+                "output": output,
+            }
+        )
 
     return pairs
 
@@ -346,11 +610,13 @@ def generate_scenario_pairs(section: dict, num_scenarios: int = 2) -> list[dict]
             f"DISCLAIMER: This is legal orientation, not legal advice. "
             f"Consult a qualified advocate for your specific situation."
         )
-        pairs.append({
-            "instruction": scenario,
-            "input": "",
-            "output": output,
-        })
+        pairs.append(
+            {
+                "instruction": scenario,
+                "input": "",
+                "output": output,
+            }
+        )
 
     return pairs
 
@@ -361,17 +627,20 @@ def generate_ipc_bns_pairs() -> list[dict]:
     for ipc_section, bns_equiv in IPC_BNS_MAPPING.items():
         if bns_equiv is None:
             continue
-        pairs.append({
-            "instruction": f"What is the BNS equivalent of Section {ipc_section} of the Indian Penal Code?",
-            "input": "",
-            "output": f"Section {ipc_section} of the Indian Penal Code (IPC) corresponds to {bns_equiv} of the Bharatiya Nyaya Sanhita (BNS) 2023.\n\nDISCLAIMER: This is legal orientation, not legal advice. Consult a qualified advocate for your specific situation.",
-        })
+        pairs.append(
+            {
+                "instruction": f"What is the BNS equivalent of Section {ipc_section} of the Indian Penal Code?",
+                "input": "",
+                "output": f"Section {ipc_section} of the Indian Penal Code (IPC) corresponds to {bns_equiv} of the Bharatiya Nyaya Sanhita (BNS) 2023.\n\nDISCLAIMER: This is legal orientation, not legal advice. Consult a qualified advocate for your specific situation.",
+            }
+        )
     return pairs
 
 
 # =============================================================================
 # Data loading
 # =============================================================================
+
 
 def load_sections_from_raw(raw_dir: Path) -> list[dict]:
     """Load all sections from raw scraped data."""
@@ -392,6 +661,7 @@ def load_sections_from_raw(raw_dir: Path) -> list[dict]:
 # =============================================================================
 # Main generation pipeline
 # =============================================================================
+
 
 def generate_v2_dataset(pairs_per_section: int = 12):
     """Generate the full v2 dataset targeting 15-20k pairs.
@@ -423,8 +693,12 @@ def generate_v2_dataset(pairs_per_section: int = 12):
             scenario_pairs = generate_scenario_pairs(section, 2)
             all_pairs.extend(scenario_pairs)
             if (i + 1) % 100 == 0:
-                print(f"  Generated {len(all_pairs)} pairs from {i + 1}/{len(sections)} sections...")
-        print(f"Generated {len(all_pairs)} pairs from {len(sections)} sections ({pairs_per_section} + 2 scenarios per section)")
+                print(
+                    f"  Generated {len(all_pairs)} pairs from {i + 1}/{len(sections)} sections..."
+                )
+        print(
+            f"Generated {len(all_pairs)} pairs from {len(sections)} sections ({pairs_per_section} + 2 scenarios per section)"
+        )
 
     # 2. Add expanded IPC to BNS mapping pairs
     ipc_bns_pairs = generate_ipc_bns_pairs()

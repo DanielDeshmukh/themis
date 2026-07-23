@@ -514,7 +514,10 @@ def categorize_section(title: str, text: str) -> str:
         return "definition"
     elif any(kw in combined for kw in ["right", "entitled", "may claim", "shall be entitled"]):
         return "right"
-    elif any(kw in combined for kw in ["offence", "crime", "stolen", "fraud", "cheating", "murder", "theft"]):
+    elif any(
+        kw in combined
+        for kw in ["offence", "crime", "stolen", "fraud", "cheating", "murder", "theft"]
+    ):
         return "offence"
     elif any(kw in combined for kw in ["procedure", "file", "complaint", "application", "form"]):
         return "procedure"
@@ -567,11 +570,13 @@ def generate_multi_qa_per_section(section: dict, pairs_per_section: int = 10) ->
             f"Consult a qualified advocate for your specific situation."
         )
 
-        pairs.append({
-            "instruction": instruction,
-            "input": "",
-            "output": output,
-        })
+        pairs.append(
+            {
+                "instruction": instruction,
+                "input": "",
+                "output": output,
+            }
+        )
 
     return pairs
 
@@ -610,11 +615,13 @@ def generate_scenario_pairs(section: dict, num_scenarios: int = 2) -> list[dict]
             f"DISCLAIMER: This is legal orientation, not legal advice. "
             f"Consult a qualified advocate for your specific situation."
         )
-        pairs.append({
-            "instruction": scenario,
-            "input": "",
-            "output": output,
-        })
+        pairs.append(
+            {
+                "instruction": scenario,
+                "input": "",
+                "output": output,
+            }
+        )
 
     return pairs
 
@@ -625,11 +632,13 @@ def generate_ipc_bns_pairs() -> list[dict]:
     for ipc_section, bns_equiv in IPC_BNS_MAPPING.items():
         if bns_equiv is None:
             continue
-        pairs.append({
-            "instruction": f"What is the BNS equivalent of Section {ipc_section} of the Indian Penal Code?",
-            "input": "",
-            "output": f"Section {ipc_section} of the Indian Penal Code (IPC) corresponds to {bns_equiv} of the Bharatiya Nyaya Sanhita (BNS) 2023.\n\nDISCLAIMER: This is legal orientation, not legal advice. Consult a qualified advocate for your specific situation.",
-        })
+        pairs.append(
+            {
+                "instruction": f"What is the BNS equivalent of Section {ipc_section} of the Indian Penal Code?",
+                "input": "",
+                "output": f"Section {ipc_section} of the Indian Penal Code (IPC) corresponds to {bns_equiv} of the Bharatiya Nyaya Sanhita (BNS) 2023.\n\nDISCLAIMER: This is legal orientation, not legal advice. Consult a qualified advocate for your specific situation.",
+            }
+        )
     return pairs
 
 
@@ -665,6 +674,7 @@ def generate_groq_pairs(sections: list[dict], max_pairs: int = 10000) -> list[di
 
     try:
         from groq import Groq
+
         client = Groq(api_key=api_key)
     except ImportError:
         print("groq package not installed, skipping LLM generation")
@@ -718,11 +728,13 @@ Rules:
                     generated = json.loads(json_match.group())
                     for item in generated:
                         if "instruction" in item and "output" in item:
-                            pairs.append({
-                                "instruction": item["instruction"],
-                                "input": "",
-                                "output": item["output"],
-                            })
+                            pairs.append(
+                                {
+                                    "instruction": item["instruction"],
+                                    "input": "",
+                                    "output": item["output"],
+                                }
+                            )
                 break  # Success, move to next section
             except Exception as e:
                 if "rate_limit" in str(e).lower() or "429" in str(e):
@@ -739,15 +751,19 @@ Rules:
         if (i + 1) % 50 == 0:
             elapsed = time.time() - start_time
             rate = len(pairs) / (elapsed / 60) if elapsed > 0 else 0
-            print(f"  [{i+1}/{len(substantial)}] {len(pairs)} pairs | "
-                  f"{rate:.0f} pairs/min | {failed} failed | "
-                  f"{elapsed:.0f}s elapsed")
+            print(
+                f"  [{i + 1}/{len(substantial)}] {len(pairs)} pairs | "
+                f"{rate:.0f} pairs/min | {failed} failed | "
+                f"{elapsed:.0f}s elapsed"
+            )
 
     print(f"Generated {len(pairs)} LLM Q&A pairs ({failed} sections failed)")
     return pairs
 
 
-def generate_v3_dataset(pairs_per_section: int = 10, use_groq: bool = True, max_groq_pairs: int = 10000):
+def generate_v3_dataset(
+    pairs_per_section: int = 10, use_groq: bool = True, max_groq_pairs: int = 10000
+):
     """Generate the full v3 dataset targeting 50k+ pairs.
 
     Sources:
@@ -778,8 +794,12 @@ def generate_v3_dataset(pairs_per_section: int = 10, use_groq: bool = True, max_
             scenario_pairs = generate_scenario_pairs(section, 2)
             all_pairs.extend(scenario_pairs)
             if (i + 1) % 100 == 0:
-                print(f"  Generated {len(all_pairs)} pairs from {i + 1}/{len(sections)} sections...")
-        print(f"Generated {len(all_pairs)} pairs from {len(sections)} sections ({pairs_per_section} + 2 scenarios per section)")
+                print(
+                    f"  Generated {len(all_pairs)} pairs from {i + 1}/{len(sections)} sections..."
+                )
+        print(
+            f"Generated {len(all_pairs)} pairs from {len(sections)} sections ({pairs_per_section} + 2 scenarios per section)"
+        )
 
     # 2. Add expanded IPC to BNS mapping pairs
     ipc_bns_pairs = generate_ipc_bns_pairs()
@@ -818,7 +838,12 @@ def generate_v3_dataset(pairs_per_section: int = 10, use_groq: bool = True, max_
     print("\n" + "=" * 60)
     print("v3 Dataset Summary")
     print("=" * 60)
-    section_count = len(all_pairs) - len(ipc_bns_pairs) - len(ABBREVIATION_PAIRS) - (len(groq_pairs) if use_groq else 0)
+    section_count = (
+        len(all_pairs)
+        - len(ipc_bns_pairs)
+        - len(ABBREVIATION_PAIRS)
+        - (len(groq_pairs) if use_groq else 0)
+    )
     print(f"Template-based pairs: {section_count}")
     print(f"IPC to BNS mapping pairs: {len(ipc_bns_pairs)}")
     print(f"Abbreviation pairs: {len(ABBREVIATION_PAIRS)}")

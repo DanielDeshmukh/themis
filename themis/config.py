@@ -11,8 +11,12 @@ class Config:
     # Paths
     project_root: Path = field(default_factory=lambda: Path(__file__).parent.parent)
     data_dir: Path = field(default_factory=lambda: Path(__file__).parent / "data")
-    raw_dir: Path = field(default_factory=lambda: Path(__file__).parent / "data" / "scraper" / "raw")
-    synthetic_dir: Path = field(default_factory=lambda: Path(__file__).parent / "data" / "synthetic")
+    raw_dir: Path = field(
+        default_factory=lambda: Path(__file__).parent / "data" / "scraper" / "raw"
+    )
+    synthetic_dir: Path = field(
+        default_factory=lambda: Path(__file__).parent / "data" / "synthetic"
+    )
     model_dir: Path = field(default_factory=lambda: Path(__file__).parent.parent / "model")
     eval_dir: Path = field(default_factory=lambda: Path(__file__).parent / "eval")
 
@@ -35,7 +39,9 @@ class Config:
     lora_r: int = 16
     lora_alpha: int = 32
     lora_dropout: float = 0.05
-    target_modules: list[str] = field(default_factory=lambda: ["q_proj", "k_proj", "v_proj", "o_proj"])
+    target_modules: list[str] = field(
+        default_factory=lambda: ["q_proj", "k_proj", "v_proj", "o_proj"]
+    )
     epochs: int = 3
     batch_size: int = 1
     gradient_accumulation_steps: int = 8
@@ -44,15 +50,17 @@ class Config:
     max_seq_length: int = 1024
 
     # Data
-    target_laws: list[str] = field(default_factory=lambda: [
-        "Bharatiya Nyaya Sanhita, 2023",
-        "Bharatiya Nagarik Suraksha Sanhita, 2023",
-        "Bharatiya Sakshya Adhiniyam, 2023",
-        "Consumer Protection Act, 2019",
-        "Right to Information Act, 2005",
-        "Payment of Wages Act, 1936",
-        "Industrial Disputes Act, 1947",
-    ])
+    target_laws: list[str] = field(
+        default_factory=lambda: [
+            "Bharatiya Nyaya Sanhita, 2023",
+            "Bharatiya Nagarik Suraksha Sanhita, 2023",
+            "Bharatiya Sakshya Adhiniyam, 2023",
+            "Consumer Protection Act, 2019",
+            "Right to Information Act, 2005",
+            "Payment of Wages Act, 1936",
+            "Industrial Disputes Act, 1947",
+        ]
+    )
 
     # Scraper
     india_code_base: str = "https://www.indiacode.nic.in"

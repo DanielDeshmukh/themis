@@ -86,11 +86,13 @@ def sections_to_alpaca(sections: list[dict]) -> list[dict]:
             f"Consult a qualified advocate for your specific situation."
         )
 
-        pairs.append({
-            "instruction": instruction,
-            "input": "",
-            "output": output,
-        })
+        pairs.append(
+            {
+                "instruction": instruction,
+                "input": "",
+                "output": output,
+            }
+        )
 
     return pairs
 
@@ -134,11 +136,13 @@ def merge_datasets(raw_dir: Path, synthetic_dir: Path) -> list[dict]:
     synthetic_data = load_json_files(synthetic_dir)
     for item in synthetic_data:
         if "instruction" in item and "output" in item:
-            all_pairs.append({
-                "instruction": item["instruction"],
-                "input": item.get("input", ""),
-                "output": item["output"],
-            })
+            all_pairs.append(
+                {
+                    "instruction": item["instruction"],
+                    "input": item.get("input", ""),
+                    "output": item["output"],
+                }
+            )
     print(f"  Loaded {len(synthetic_data)} synthetic pairs")
 
     return all_pairs
@@ -152,6 +156,7 @@ def create_eval_set(pairs: list[dict], eval_size: int = 50) -> tuple[list[dict],
 
     # Shuffle deterministically
     import random
+
     random.seed(42)
     shuffled = pairs.copy()
     random.shuffle(shuffled)
@@ -210,8 +215,12 @@ def preprocess_pipeline():
     print(f"Total unique pairs: {len(unique_pairs)}")
     print(f"Training pairs: {len(train_set)}")
     print(f"Evaluation pairs: {len(eval_set)}")
-    print(f"Avg instruction length: {sum(len(p['instruction']) for p in unique_pairs) // len(unique_pairs)} chars")
-    print(f"Avg output length: {sum(len(p['output']) for p in unique_pairs) // len(unique_pairs)} chars")
+    print(
+        f"Avg instruction length: {sum(len(p['instruction']) for p in unique_pairs) // len(unique_pairs)} chars"
+    )
+    print(
+        f"Avg output length: {sum(len(p['output']) for p in unique_pairs) // len(unique_pairs)} chars"
+    )
 
 
 if __name__ == "__main__":

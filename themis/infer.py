@@ -126,7 +126,7 @@ class ThemisInference:
 
         # Strip the prompt prefix if echoed back
         if response.startswith(prompt):
-            response = response[len(prompt):]
+            response = response[len(prompt) :]
 
         response = response.strip()
 

@@ -47,13 +47,8 @@ def display_banner():
     console.print()
     console.print(ASCII_ART, style="bold blue")
     console.print()
-    console.print(
-        f"[bold white]THEMIS[/bold white] v{VERSION}  "
-        f"[dim]| Model: {MODEL_NAME}[/dim]"
-    )
-    console.print(
-        "[dim]Domain: BNS 2023 | BNSS 2023 | IPC | Consumer Law | RTI Act[/dim]"
-    )
+    console.print(f"[bold white]THEMIS[/bold white] v{VERSION}  [dim]| Model: {MODEL_NAME}[/dim]")
+    console.print("[dim]Domain: BNS 2023 | BNSS 2023 | IPC | Consumer Law | RTI Act[/dim]")
     console.print()
 
 
@@ -185,11 +180,14 @@ def chat():
 def scrape(
     law: str = typer.Option(
         "all",
-        "--law", "-l",
+        "--law",
+        "-l",
         help="Law to scrape: all, bns, bnss, bsa, cpa, rti, ipc",
     ),
     delay: float = typer.Option(3.0, "--delay", "-d", help="Delay between requests (seconds)"),
-    verbose: bool = typer.Option(True, "--verbose/--quiet", "-v/-q", help="Show section text snippets"),
+    verbose: bool = typer.Option(
+        True, "--verbose/--quiet", "-v/-q", help="Show section text snippets"
+    ),
     force: bool = typer.Option(False, "--force", "-f", help="Re-scrape even if already scraped"),
 ):
     """Scrape legal data from India Code."""
@@ -218,6 +216,7 @@ def scrape(
         # Check if already scraped
         from .config import config
         from .data.scraper.indiacode import _is_already_scraped
+
         if _is_already_scraped(full_name, config.raw_dir) and not force:
             console.print(f"[yellow]Already scraped: {full_name}[/yellow]")
             console.print("[yellow]Use --force to re-scrape[/yellow]")
@@ -229,7 +228,9 @@ def scrape(
             act = scraper.scrape_act(best["handle_id"], full_name)
             if act:
                 scraper.save_act(act)
-                console.print(f"\n[green]Scraped {len(act.sections)} sections from {act.name}[/green]")
+                console.print(
+                    f"\n[green]Scraped {len(act.sections)} sections from {act.name}[/green]"
+                )
             else:
                 console.print(f"[red]Failed to fetch act page for {full_name}[/red]")
         else:
@@ -261,7 +262,8 @@ def generate(
     ),
     max_pairs: int = typer.Option(
         None,
-        "--max", "-m",
+        "--max",
+        "-m",
         help="Maximum Q&A pairs to generate",
     ),
     groq_limit: int = typer.Option(
@@ -276,6 +278,7 @@ def generate(
 
     if v3:
         from .data.synthetic.generate_v3 import generate_v3_dataset
+
         pairs = generate_v3_dataset(
             pairs_per_section=10,
             use_groq=api,
@@ -283,12 +286,14 @@ def generate(
         )
     elif v2:
         from .data.synthetic.generate_v2 import generate_v2_dataset
+
         pairs = generate_v2_dataset(pairs_per_section=3)
     else:
         from .data.synthetic.generate import generate_training_data
 
         if api:
             import os
+
             if not os.environ.get("GROQ_API_KEY"):
                 console.print("[yellow]GROQ_API_KEY not set. Using template fallback.[/yellow]")
                 api = False
@@ -339,6 +344,7 @@ def eval(
 
     try:
         from .infer import get_inference, load_model
+
         load_model()
     except Exception as e:
         console.print(f"[red]Error loading model:[/red] {e}")
@@ -349,15 +355,17 @@ def eval(
 
     for i, item in enumerate(eval_set):
         question = item.get("instruction", "")
-        console.print(f"[cyan]Q{i+1}:[/cyan] {question[:80]}...")
+        console.print(f"[cyan]Q{i + 1}:[/cyan] {question[:80]}...")
 
         try:
             result = inference.generate(question)
-            results.append({
-                "question": question,
-                "expected": item.get("output", ""),
-                "predicted": result.response,
-            })
+            results.append(
+                {
+                    "question": question,
+                    "expected": item.get("output", ""),
+                    "predicted": result.response,
+                }
+            )
             if verbose:
                 console.print(f"  [green]A:[/green] {result.response[:100]}...\n")
         except Exception as e:

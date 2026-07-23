@@ -14,6 +14,7 @@ from pathlib import Path
 def load_config(config_path: str = None) -> dict:
     """Load training config from YAML."""
     import yaml
+
     if config_path is None:
         config_path = Path(__file__).parent / "config.yaml"
     with open(config_path, "r") as f:

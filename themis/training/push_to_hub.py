@@ -15,6 +15,7 @@ def push_to_hub(adapter_dir: str = None, repo_name: str = None):
 
     # Check for HF token
     import os
+
     token = os.environ.get("HF_TOKEN") or os.environ.get("HUGGING_FACE_HUB_TOKEN")
     if not token:
         print("Error: HuggingFace token not found.")

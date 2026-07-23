@@ -66,11 +66,13 @@ class IndiaCodeScraper:
         self.delay = delay or 3.0
         self.verbose = verbose
         self.session = requests.Session()
-        self.session.headers.update({
-            "User-Agent": "THEMIS-Legal-AI/1.0 (Academic Research)",
-            "Accept": "text/html,application/xhtml+xml",
-            "Accept-Language": "en-US,en;q=0.9",
-        })
+        self.session.headers.update(
+            {
+                "User-Agent": "THEMIS-Legal-AI/1.0 (Academic Research)",
+                "Accept": "text/html,application/xhtml+xml",
+                "Accept-Language": "en-US,en;q=0.9",
+            }
+        )
 
     def _get(self, url: str, retries: int = 5, params: dict = None) -> requests.Response:
         """GET request with retry, exponential backoff, and rate limiting."""
@@ -81,8 +83,9 @@ class IndiaCodeScraper:
 
                 if resp.status_code >= 500:
                     wait = min(2 ** (attempt + 1), 30)
-                    _print(f"  Retry {attempt + 1}/{retries} after {wait}s: "
-                           f"HTTP {resp.status_code}")
+                    _print(
+                        f"  Retry {attempt + 1}/{retries} after {wait}s: HTTP {resp.status_code}"
+                    )
                     time.sleep(wait)
                     continue
 
@@ -137,13 +140,15 @@ class IndiaCodeScraper:
             href = link.get("href", "")
             match = re.search(r"/handle/(\d+/\d+)", href)
             if match:
-                results.append({
-                    "enactment_date": cols[0].text.strip(),
-                    "act_number": cols[1].text.strip(),
-                    "short_title": cols[2].text.strip(),
-                    "handle_id": match.group(1),
-                    "view_url": urljoin(self.BASE_URL, href),
-                })
+                results.append(
+                    {
+                        "enactment_date": cols[0].text.strip(),
+                        "act_number": cols[1].text.strip(),
+                        "short_title": cols[2].text.strip(),
+                        "handle_id": match.group(1),
+                        "view_url": urljoin(self.BASE_URL, href),
+                    }
+                )
         return results
 
     def get_act_page(self, handle_id: str) -> BeautifulSoup:
@@ -167,13 +172,15 @@ class IndiaCodeScraper:
                 section_id = section_id_match.group(1) if section_id_match else ""
                 title_match = re.search(r"Section \d+\.\s*(.*)", text)
                 title = title_match.group(1).strip() if title_match else text
-                sections.append({
-                    "section_number": section_no,
-                    "title": title,
-                    "url": urljoin(self.BASE_URL, href),
-                    "act_id": act_id,
-                    "section_id": section_id,
-                })
+                sections.append(
+                    {
+                        "section_number": section_no,
+                        "title": title,
+                        "url": urljoin(self.BASE_URL, href),
+                        "act_id": act_id,
+                        "section_id": section_id,
+                    }
+                )
         return sections
 
     def extract_chapters(self, soup: BeautifulSoup) -> dict[str, str]:
@@ -289,13 +296,17 @@ class IndiaCodeScraper:
             if done % 10 == 0 or done == total:
                 pct = (done / total) * 100
                 char_k = total_chars / 1024
-                _print(f"  [{done}/{total}] {pct:.0f}% | "
-                       f"collected: {char_k:.1f} KB | "
-                       f"failed: {failed_sections}")
+                _print(
+                    f"  [{done}/{total}] {pct:.0f}% | "
+                    f"collected: {char_k:.1f} KB | "
+                    f"failed: {failed_sections}"
+                )
 
-        _print(f"  Done: {len(act.sections)}/{total} sections | "
-               f"{total_chars/1024:.1f} KB collected"
-               + (f" | {failed_sections} failed" if failed_sections else ""))
+        _print(
+            f"  Done: {len(act.sections)}/{total} sections | "
+            f"{total_chars / 1024:.1f} KB collected"
+            + (f" | {failed_sections} failed" if failed_sections else "")
+        )
         return act
 
     def save_act(self, act: Act, output_dir: Path = None):
@@ -383,7 +394,7 @@ def scrape_target_laws(force: bool = False):
     failed = []
 
     for law_name in config.target_laws:
-        _print(f"\n{'='*60}")
+        _print(f"\n{'=' * 60}")
         _print(f"Searching for: {law_name}")
         _print("=" * 60)
 
@@ -422,7 +433,7 @@ def scrape_target_laws(force: bool = False):
             continue
 
     # Summary
-    _print(f"\n{'='*60}")
+    _print(f"\n{'=' * 60}")
     _print("SCRAPING SUMMARY")
     _print("=" * 60)
     if succeeded:

@@ -46,10 +46,12 @@ class KanoonScraper:
     def __init__(self, delay: float = None):
         self.delay = delay or config.request_delay
         self.session = requests.Session()
-        self.session.headers.update({
-            "User-Agent": "THEMIS-Legal-AI/1.0 (Academic Research)",
-            "Accept": "text/html,application/xhtml+xml",
-        })
+        self.session.headers.update(
+            {
+                "User-Agent": "THEMIS-Legal-AI/1.0 (Academic Research)",
+                "Accept": "text/html,application/xhtml+xml",
+            }
+        )
 
     def _get(self, url: str, retries: int = None, params: dict = None) -> requests.Response:
         """GET request with retry and rate limiting."""
@@ -63,7 +65,7 @@ class KanoonScraper:
             except requests.RequestException as e:
                 if attempt == retries - 1:
                     raise
-                wait = 2 ** attempt
+                wait = 2**attempt
                 print(f"  Retry {attempt + 1}/{retries} after {wait}s: {e}")
                 time.sleep(wait)
         raise RuntimeError(f"Failed after {retries} retries")
@@ -92,11 +94,13 @@ class KanoonScraper:
             snippet_div = result_div.find("div", class_="docsnippet")
             snippet = snippet_div.get_text(strip=True) if snippet_div else ""
 
-            results.append({
-                "title": title,
-                "url": urljoin(self.BASE_URL, href),
-                "snippet": snippet,
-            })
+            results.append(
+                {
+                    "title": title,
+                    "url": urljoin(self.BASE_URL, href),
+                    "snippet": snippet,
+                }
+            )
 
         return results
 
@@ -159,7 +163,7 @@ class KanoonScraper:
             print(f"  Searching: {query}")
             results = self.search(query)
 
-            for result in results[:max_results // len(queries)]:
+            for result in results[: max_results // len(queries)]:
                 try:
                     data = self.parse_judgment_page(result["url"])
                     judgment = Judgment(
