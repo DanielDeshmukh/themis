@@ -31,7 +31,7 @@ def run_eval(verbose: bool = False):
     # Try to load model and generate predictions
     results = []
     try:
-        from ..infer import load_model, get_inference
+        from ..infer import get_inference, load_model
         load_model()
         inference = get_inference()
 

@@ -32,10 +32,10 @@ def format_instruction(sample):
 def train():
     """Run LoRA fine-tuning with Unsloth."""
     try:
-        from unsloth import FastLanguageModel
-        from trl import SFTTrainer
-        from transformers import TrainingArguments
         from datasets import Dataset
+        from transformers import TrainingArguments
+        from trl import SFTTrainer
+        from unsloth import FastLanguageModel
     except ImportError:
         print("Error: Required packages not found.")
         print("Install with: pip install unsloth trl transformers datasets")
@@ -108,7 +108,7 @@ def train():
 
     # Train
     print("\nStarting training...")
-    stats = trainer.train()
+    trainer.train()
 
     # Save adapter
     output_dir = config["output"]["adapter_dir"]
@@ -119,7 +119,7 @@ def train():
 
     print("\nTraining complete!")
     print(f"Adapter saved to: {output_dir}")
-    print(f"Upload to HuggingFace Hub with push_to_hub.py")
+    print("Upload to HuggingFace Hub with push_to_hub.py")
 
 
 if __name__ == "__main__":

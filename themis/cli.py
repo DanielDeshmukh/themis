@@ -11,18 +11,17 @@ Commands:
     themis version          - Version info
 """
 
-import sys
 import io
+import sys
 
 # Force UTF-8 output for Windows
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
 sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8")
 
-import typer
-from rich.console import Console
-from rich.panel import Panel
-from rich.progress import Progress, SpinnerColumn, TextColumn
-
+import typer  # noqa: E402
+from rich.console import Console  # noqa: E402
+from rich.panel import Panel  # noqa: E402
+from rich.progress import Progress, SpinnerColumn, TextColumn  # noqa: E402
 
 app = typer.Typer(
     name="themis",
@@ -68,7 +67,7 @@ def ask(
     question: str = typer.Argument(..., help="Your legal question"),
 ):
     """Ask a legal question and get a single-shot response."""
-    from .infer import load_model, get_inference
+    from .infer import get_inference, load_model
 
     display_banner()
 
@@ -112,7 +111,7 @@ def ask(
 @app.command()
 def chat():
     """Start an interactive multi-turn legal Q&A session."""
-    from .infer import load_model, get_inference
+    from .infer import get_inference, load_model
 
     display_banner()
 
@@ -157,7 +156,7 @@ def chat():
             console=console,
             transient=True,
         ) as progress:
-            task = progress.add_task("THEMIS is thinking...", total=None)
+            task = progress.add_task("THEMIS is thinking...", total=None)  # noqa: F841
             result = inference.generate(question, history)
             progress.stop()
 
@@ -217,8 +216,8 @@ def scrape(
         scraper = IndiaCodeScraper(delay=delay, verbose=verbose)
 
         # Check if already scraped
-        from .data.scraper.indiacode import _is_already_scraped
         from .config import config
+        from .data.scraper.indiacode import _is_already_scraped
         if _is_already_scraped(full_name, config.raw_dir) and not force:
             console.print(f"[yellow]Already scraped: {full_name}[/yellow]")
             console.print("[yellow]Use --force to re-scrape[/yellow]")
@@ -321,6 +320,7 @@ def eval(
 ):
     """Run the evaluation harness on the held-out test set."""
     import json
+
     from .config import config
 
     display_banner()
@@ -338,7 +338,7 @@ def eval(
     console.print(f"Loaded {len(eval_set)} evaluation questions\n")
 
     try:
-        from .infer import load_model, get_inference
+        from .infer import get_inference, load_model
         load_model()
     except Exception as e:
         console.print(f"[red]Error loading model:[/red] {e}")

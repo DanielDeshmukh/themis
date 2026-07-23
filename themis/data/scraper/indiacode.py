@@ -7,7 +7,6 @@ to the next law on failure.
 
 import json
 import re
-import sys
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -228,7 +227,7 @@ class IndiaCodeScraper:
             soup = self.get_act_page(handle_id)
         except Exception as e:
             _print(f"  ERROR: Could not fetch act page for {handle_id}: {e}")
-            _print(f"  Skipping this act.")
+            _print("  Skipping this act.")
             return None
 
         title_tag = soup.find("td", id="short_title")
@@ -391,7 +390,7 @@ def scrape_target_laws(force: bool = False):
         # Check if already scraped
         if _is_already_scraped(law_name, config.raw_dir):
             _print(f"  Already scraped: {law_name}")
-            _print(f"  Use --force to re-scrape")
+            _print("  Use --force to re-scrape")
             skipped.append(law_name)
             continue
 

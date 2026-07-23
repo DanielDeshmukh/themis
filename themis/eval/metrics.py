@@ -9,7 +9,6 @@ Runs 50 held-out questions and computes metrics:
 
 import json
 import re
-from pathlib import Path
 
 
 def extract_section_citations(text: str) -> set[str]:
@@ -97,7 +96,7 @@ def run_evaluation(eval_set_path: str = None, predictions_path: str = None):
 
     # Load eval set
     with open(eval_set_path, "r", encoding="utf-8") as f:
-        eval_set = json.load(f)
+        json.load(f)
 
     # Load predictions
     with open(predictions_path, "r", encoding="utf-8") as f:

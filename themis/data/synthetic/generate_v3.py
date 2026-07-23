@@ -825,7 +825,7 @@ def generate_v3_dataset(pairs_per_section: int = 10, use_groq: bool = True, max_
     print(f"LLM-generated pairs: {len(groq_pairs) if use_groq else 0}")
     print(f"Total (before dedup): {len(all_pairs)}")
     print(f"Total (after dedup): {len(unique_pairs)}")
-    print(f"Target: 50,000+")
+    print("Target: 50,000+")
 
     return unique_pairs
 

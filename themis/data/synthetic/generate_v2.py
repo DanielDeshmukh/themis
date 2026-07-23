@@ -464,7 +464,7 @@ def generate_v2_dataset(pairs_per_section: int = 12):
     print(f"Abbreviation pairs: {len(ABBREVIATION_PAIRS)}")
     print(f"Total (before dedup): {len(all_pairs)}")
     print(f"Total (after dedup): {len(unique_pairs)}")
-    print(f"Target range: 15,000 - 20,000")
+    print("Target range: 15,000 - 20,000")
 
     return unique_pairs
 
