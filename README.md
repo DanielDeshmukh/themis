@@ -16,16 +16,14 @@
 <p>
   <img src="https://img.shields.io/badge/model-Mistral%207B%20LoRA-blueviolet" />
   <img src="https://img.shields.io/badge/domain-Indian%20Law%20%7C%20BNS%20%7C%20IPC-crimson" />
-  <img src="https://img.shields.io/badge/status-v1%20trained%20%7C%20v2%20overfitting%20%7C%20v3%202-epoch%20fix-blue" />
+  <img src="https://img.shields.io/badge/status-v5%20retrieval--grounded-brightgreen" />
   <img src="https://img.shields.io/badge/python-3.11+-brightgreen" />
   <img src="https://img.shields.io/badge/license-MIT-lightgrey" />
 </p>
 
 *"Not retrieval. Not lookup. Pure legal reasoning, baked into weights."*
 
-**HuggingFace:** 
-- v1: [`Daniel2503/themis-mistral-7b-lora`](https://huggingface.co/Daniel2503/themis-mistral-7b-lora)
-- v3: [`Daniel2503/themis-mistral-7b-lora-v3`](https://huggingface.co/Daniel2503/themis-mistral-7b-lora-v3)
+**HuggingFace:** [`Daniel2503/themis-mistral-7b-lora-v5`](https://huggingface.co/Daniel2503/themis-mistral-7b-lora-v5)
 
 </div>
 
@@ -375,7 +373,7 @@ At 90,000 training pairs, a model can genuinely know Indian law. That is the goa
 | Runtime documents | Not needed | Required |
 | Best for | Citizen Q&A | Deep legal research |
 | Citations | Parametric (may hallucinate) | Source-grounded (verified) |
-| Status | v1 trained, v3 in progress | Production-ready |
+| Status | v5 retrieval-grounded | Production-ready |
 
 ---
 
