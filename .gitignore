@@ -1,6 +1,9 @@
 # THEMIS model weights (gitignored)
 themis/model/
 
+# Interview prep (local only)
+paojectname-interview-prep.md
+
 # Python
 __pycache__/
 *.py[cod]
